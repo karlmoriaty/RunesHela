@@ -1,7 +1,7 @@
 # RunesHela · 设计文档集
 
 > **项目名称**：RunesHela（已选定，2026-11-26；见 [06 决策记录](./docs/06-决策记录.md) D-06）
-> **状态**：**M2 已完成（2026-11-27）**，下一步 M3（性能与微命令）
+> **状态**：**M3 已完成（2026-11-27）**，下一步 M4（Agent 契约）
 > **日期**：2026-11-27
 
 ---
@@ -78,6 +78,15 @@ app greet --help --json
 - **DI**：命令无无参构造时，生成器通过 `IServiceProvider` 解析构造参数（`RunAsync(args, services)`）。
 - **诊断**：`RHL001`–`RHL036` 编译期诊断，见 [errors.md](./docs/errors.md)。
 
+### M3 已具备的能力
+
+- **热路径优化**：选项名称长度前置比较、短选项 `switch`、枚举长度判断、`WantsJson` 单次扫描、位置参数字符串复用。
+- **零分配验证**：5 选项绑定净分配 0 B（不含命令实例），帮助 0 B，错误 304 B；Release 下以 `GC.GetAllocatedBytesForCurrentThread` 断言。
+- **性能门禁**：`tests/RunesHela.Performance.Tests` 以绝对预算（含 +10% 失败阈值）在 CI 执行，独立 `perf` job 运行微基准并上传 JSON。
+- **生成器性能**：1/10/50/200 命令 no-op 0.02–0.04 ms（预算 ≤30 ms，失败阈值 50 ms）。
+- **AOT 矩阵**：linux-x64 / win-x64 / osx-arm64 三平台 AOT + Trim/SingleFile + ReadyToRun 冒烟全部通过；启动增量 0.14 ms。
+- **DI 验证**：缺失服务提供器/缺失注册分别给出稳定错误码与退出码，不挂起。
+
 ---
 
 ## 文档地图
@@ -93,7 +102,8 @@ app greet --help --json
 | 06 | [决策记录](./docs/06-决策记录.md) | **你已做出的 14 项决议** + 复核提示 | 你 | ✅ 已决议 |
 | 07 | [M0 基准报告](./docs/benchmarks/M0-基准报告.md) | 解析/帮助/错误/路由/AOT 实测与预算对照 | 开发/评审 | ✅ M0 通过 |
 | 08 | [M2 基准报告](./docs/benchmarks/M2-基准报告.md) | M2 回归：帮助 0 B、错误 304 B、集成测试 103 项 | 开发/评审 | ✅ M2 通过 |
-| 09 | [错误码与诊断](./docs/errors.md) | 运行时 `RHL_*` 错误码、`RHLxxx` 诊断码、退出码 | 开发/使用 | ✅ 随 M2 更新 |
+| 09 | [M3 基准报告](./docs/benchmarks/M3-基准报告.md) | 热路径 0 B、性能门禁、生成器 no-op、AOT/Trim/R2R 矩阵 | 开发/评审 | ✅ M3 通过 |
+| 10 | [错误码与诊断](./docs/errors.md) | 运行时 `RHL_*` 错误码、`RHLxxx` 诊断码、退出码 | 开发/使用 | ✅ 随 M2 更新 |
 
 ---
 
@@ -156,7 +166,7 @@ app greet --help --json
 
 ## 边界声明
 
-- 当前已完成 **M2**（2026-11-27）：纯 POCO 选项/参数绑定、默认值/ENV/校验、人类与 JSON 帮助、结构化错误、Secret 脱敏、TTY/NO_COLOR、构造注入与集成测试；下一步 M3。
+- 当前已完成 **M3**（2026-11-27）：热路径优化与零分配门禁、生成器 no-op 基准、性能门禁、AOT/Trim/SingleFile/R2R 矩阵、DI 验证；下一步 M4。
 - 以上决议已按你的选择写入文档；项目已按决议进入开发。
 
 ---
