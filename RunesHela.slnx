@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/RunesHela.Benchmarks/RunesHela.Benchmarks.csproj" />
+  </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/AotCli/AotCli.csproj" />
     <Project Path="samples/MinimalCli/MinimalCli.csproj" />

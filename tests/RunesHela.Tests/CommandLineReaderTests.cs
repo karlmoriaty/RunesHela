@@ -15,7 +15,7 @@ public sealed class CommandLineReaderTests
         Assert.Equal("name", token.Name.ToString());
         Assert.False(token.HasValue);
 
-        Assert.True(reader.TryReadValue(token, out var value));
+        Assert.True(reader.TryReadValue(out var value));
         Assert.Equal("runes", value.ToString());
         Assert.False(reader.TryRead(out _));
     }
@@ -30,7 +30,7 @@ public sealed class CommandLineReaderTests
         Assert.True(token.HasValue);
         Assert.Equal("runes", token.Value.ToString());
 
-        Assert.True(reader.TryReadValue(token, out var value));
+        Assert.True(reader.TryReadValue(out var value));
         Assert.Equal("runes", value.ToString());
     }
 
@@ -53,7 +53,7 @@ public sealed class CommandLineReaderTests
         Assert.Equal("n", token.Name.ToString());
         Assert.False(token.HasValue);
 
-        Assert.True(reader.TryReadValue(token, out var value));
+        Assert.True(reader.TryReadValue(out var value));
         Assert.Equal("runes", value.ToString());
     }
 
@@ -132,7 +132,7 @@ public sealed class CommandLineReaderTests
         var reader = new CommandLineReader(new[] { "--name" });
 
         Assert.True(reader.TryRead(out var token));
-        Assert.False(reader.TryReadValue(token, out _));
+        Assert.False(reader.TryReadValue(out _));
     }
 
     [Fact]
@@ -141,7 +141,7 @@ public sealed class CommandLineReaderTests
         var reader = new CommandLineReader(new[] { "--name", "--", "value" });
 
         Assert.True(reader.TryRead(out var token));
-        Assert.False(reader.TryReadValue(token, out _));
+        Assert.False(reader.TryReadValue(out _));
 
         Assert.True(reader.TryRead(out var terminator));
         Assert.Equal(CommandLineTokenKind.Terminator, terminator.Kind);
@@ -156,7 +156,7 @@ public sealed class CommandLineReaderTests
         var reader = new CommandLineReader(new[] { "--name", "--other" });
 
         Assert.True(reader.TryRead(out var token));
-        Assert.True(reader.TryReadValue(token, out var value));
+        Assert.True(reader.TryReadValue(out var value));
         Assert.Equal("--other", value.ToString());
     }
 
@@ -167,12 +167,12 @@ public sealed class CommandLineReaderTests
 
         Assert.True(reader.TryRead(out var first));
         Assert.Equal("tag", first.Name.ToString());
-        Assert.True(reader.TryReadValue(first, out var firstValue));
+        Assert.True(reader.TryReadValue(out var firstValue));
         Assert.Equal("a", firstValue.ToString());
 
         Assert.True(reader.TryRead(out var second));
         Assert.Equal("tag", second.Name.ToString());
-        Assert.True(reader.TryReadValue(second, out var secondValue));
+        Assert.True(reader.TryReadValue(out var secondValue));
         Assert.Equal("b", secondValue.ToString());
     }
 

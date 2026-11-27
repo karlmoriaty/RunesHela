@@ -8,6 +8,11 @@ public ref struct CommandLineReader
     private readonly ReadOnlySpan<string> _args;
     private int _index;
     private bool _afterTerminator;
+    private bool _lastWasOption;
+    private bool _lastHasValue;
+    private int _lastArgIndex;
+    private int _lastValueStart;
+    private int _lastValueLength;
 
     /// <summary>
     /// Creates a reader over the supplied arguments.
@@ -18,6 +23,11 @@ public ref struct CommandLineReader
         _args = args;
         _index = 0;
         _afterTerminator = false;
+        _lastWasOption = false;
+        _lastHasValue = false;
+        _lastArgIndex = -1;
+        _lastValueStart = 0;
+        _lastValueLength = 0;
     }
 
     /// <summary>
@@ -27,9 +37,12 @@ public ref struct CommandLineReader
     /// <returns><see langword="true"/> when a token was read.</returns>
     public bool TryRead(out CommandLineToken token)
     {
+        _lastWasOption = false;
+
         while (_index < _args.Length)
         {
             var arg = _args[_index++];
+            var argIndex = _index - 1;
 
             if (_afterTerminator)
             {
@@ -48,7 +61,7 @@ public ref struct CommandLineReader
             {
                 if (arg[1] == '-')
                 {
-                    token = ReadLongOption(arg.AsSpan(2));
+                    token = ReadOption(arg.AsSpan(2), argIndex, prefixLength: 2);
                     return true;
                 }
 
@@ -59,7 +72,7 @@ public ref struct CommandLineReader
                     return true;
                 }
 
-                token = ReadShortOption(arg.AsSpan(1));
+                token = ReadOption(arg.AsSpan(1), argIndex, prefixLength: 1);
                 return true;
             }
 
@@ -72,17 +85,25 @@ public ref struct CommandLineReader
     }
 
     /// <summary>
-    /// Reads the value for an option token. If the token carried an inline value, that value is returned.
-    /// Otherwise the next argument is consumed, unless it is the <c>--</c> terminator.
+    /// Reads the value for the option returned by the most recent <see cref="TryRead"/> call.
+    /// If the option carried an inline value, that value is returned. Otherwise the next argument
+    /// is consumed, unless it is the <c>--</c> terminator.
     /// </summary>
-    /// <param name="token">The option token previously returned by <see cref="TryRead"/>.</param>
     /// <param name="value">The option value.</param>
     /// <returns><see langword="true"/> when a value was available.</returns>
-    public bool TryReadValue(in CommandLineToken token, out ReadOnlySpan<char> value)
+    public bool TryReadValue(out ReadOnlyMemory<char> value)
     {
-        if (token.HasValue)
+        if (!_lastWasOption)
         {
-            value = token.Value;
+            value = default;
+            return false;
+        }
+
+        _lastWasOption = false;
+
+        if (_lastHasValue)
+        {
+            value = _args[_lastArgIndex].AsMemory(_lastValueStart, _lastValueLength);
             return true;
         }
 
@@ -100,23 +121,29 @@ public ref struct CommandLineReader
         }
 
         _index++;
-        value = next.AsSpan();
+        value = next.AsMemory();
         return true;
     }
 
-    private static CommandLineToken ReadLongOption(ReadOnlySpan<char> body)
+    private CommandLineToken ReadOption(ReadOnlySpan<char> body, int argIndex, int prefixLength)
     {
-        var equals = body.IndexOf('=');
-        return equals >= 0
-            ? CommandLineToken.Option(body[..equals], body[(equals + 1)..], hasValue: true)
-            : CommandLineToken.Option(body);
-    }
+        _lastWasOption = true;
+        _lastArgIndex = argIndex;
 
-    private static CommandLineToken ReadShortOption(ReadOnlySpan<char> body)
-    {
         var equals = body.IndexOf('=');
-        return equals >= 0
-            ? CommandLineToken.Option(body[..equals], body[(equals + 1)..], hasValue: true)
-            : CommandLineToken.Option(body);
+
+        if (equals < 0)
+        {
+            _lastHasValue = false;
+            _lastValueStart = 0;
+            _lastValueLength = 0;
+            return CommandLineToken.Option(body);
+        }
+
+        _lastHasValue = true;
+        _lastValueStart = prefixLength + equals + 1;
+        _lastValueLength = body.Length - equals - 1;
+
+        return CommandLineToken.Option(body[..equals], body[(equals + 1)..], hasValue: true);
     }
 }

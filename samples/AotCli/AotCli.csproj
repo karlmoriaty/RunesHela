@@ -14,6 +14,7 @@
     <ProjectReference Include="..\..\src\RunesHela\RunesHela.csproj" />
     <ProjectReference Include="..\..\src\RunesHela.Generator\RunesHela.Generator.csproj"
                       OutputItemType="Analyzer"
-                      ReferenceOutputAssembly="false" />
+                      ReferenceOutputAssembly="false"
+                      GlobalPropertiesToRemove="PublishAot;PublishTrimmed;PublishSingleFile;SelfContained;RuntimeIdentifier" />
   </ItemGroup>
 </Project>
