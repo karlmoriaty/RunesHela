@@ -69,7 +69,7 @@ jobs:
           - rid: win-x64
             os: windows-latest
           - rid: osx-arm64
-            os: macos-14
+            os: macos-latest
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
