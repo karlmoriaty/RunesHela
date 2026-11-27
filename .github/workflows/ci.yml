@@ -51,5 +51,28 @@ jobs:
       - name: Smoke test AOT binary
         run: ./artifacts/aot/linux-x64/AotCli --help
 
+      - name: Measure AOT startup
+        run: |
+          python3 - <<'PY'
+          import statistics
+          import subprocess
+          import time
+
+          times = []
+          for _ in range(30):
+              start = time.perf_counter()
+              subprocess.run(
+                  ["./artifacts/aot/linux-x64/AotCli", "--help"],
+                  stdout=subprocess.DEVNULL,
+                  check=True,
+              )
+              times.append((time.perf_counter() - start) * 1000)
+
+          times.sort()
+          p50 = statistics.median(times)
+          p95 = times[int(len(times) * 0.95) - 1]
+          print(f"AOT startup p50={p50:.2f} ms p95={p95:.2f} ms min={times[0]:.2f} ms max={times[-1]:.2f} ms")
+          PY
+
       - name: Record AOT binary size
         run: ls -lh artifacts/aot/linux-x64/AotCli
