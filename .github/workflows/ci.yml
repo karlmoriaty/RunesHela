@@ -21,7 +21,7 @@ jobs:
         run: dotnet restore RunesHela.slnx
 
       - name: Build
-        run: dotnet build RunesHela.slnx -c Release --no-restore
+        run: dotnet build RunesHela.slnx -c Release --no-restore -m:1
 
       - name: Test runtime
         run: dotnet test tests/RunesHela.Tests/RunesHela.Tests.csproj -c Release --no-build
@@ -46,10 +46,14 @@ jobs:
           sudo apt-get install -y clang zlib1g-dev
 
       - name: Publish Native AOT
-        run: dotnet publish samples/AotCli/AotCli.csproj -c Release -r linux-x64 -o artifacts/aot/linux-x64
+        run: |
+          dotnet publish samples/AotCli/AotCli.csproj -c Release -r linux-x64 -o artifacts/aot/linux-x64
+          dotnet publish samples/EmptyAot/EmptyAot.csproj -c Release -r linux-x64 -o artifacts/aot/linux-x64
 
-      - name: Smoke test AOT binary
-        run: ./artifacts/aot/linux-x64/AotCli --help
+      - name: Smoke test AOT binaries
+        run: |
+          ./artifacts/aot/linux-x64/AotCli --help
+          ./artifacts/aot/linux-x64/EmptyAot
 
       - name: Measure AOT startup
         run: |
@@ -58,21 +62,21 @@ jobs:
           import subprocess
           import time
 
-          times = []
-          for _ in range(30):
-              start = time.perf_counter()
-              subprocess.run(
-                  ["./artifacts/aot/linux-x64/AotCli", "--help"],
-                  stdout=subprocess.DEVNULL,
-                  check=True,
-              )
-              times.append((time.perf_counter() - start) * 1000)
+          def measure(path, *args):
+              times = []
+              for _ in range(30):
+                  start = time.perf_counter()
+                  subprocess.run([path, *args], stdout=subprocess.DEVNULL, check=True)
+                  times.append((time.perf_counter() - start) * 1000)
+              times.sort()
+              return statistics.median(times), times[int(len(times) * 0.95) - 1]
 
-          times.sort()
-          p50 = statistics.median(times)
-          p95 = times[int(len(times) * 0.95) - 1]
-          print(f"AOT startup p50={p50:.2f} ms p95={p95:.2f} ms min={times[0]:.2f} ms max={times[-1]:.2f} ms")
+          empty_p50, empty_p95 = measure("./artifacts/aot/linux-x64/EmptyAot")
+          app_p50, app_p95 = measure("./artifacts/aot/linux-x64/AotCli", "--help")
+          print(f"EmptyAot p50={empty_p50:.2f} ms p95={empty_p95:.2f} ms")
+          print(f"AotCli   p50={app_p50:.2f} ms p95={app_p95:.2f} ms")
+          print(f"Delta    p50={app_p50 - empty_p50:.2f} ms p95={app_p95 - empty_p95:.2f} ms")
           PY
 
       - name: Record AOT binary size
-        run: ls -lh artifacts/aot/linux-x64/AotCli
+        run: ls -lh artifacts/aot/linux-x64/AotCli artifacts/aot/linux-x64/EmptyAot

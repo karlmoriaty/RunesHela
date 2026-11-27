@@ -4,6 +4,7 @@
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/AotCli/AotCli.csproj" />
+    <Project Path="samples/EmptyAot/EmptyAot.csproj" />
     <Project Path="samples/MinimalCli/MinimalCli.csproj" />
   </Folder>
   <Folder Name="/src/">
