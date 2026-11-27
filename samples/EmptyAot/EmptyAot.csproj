@@ -7,5 +7,9 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <OptimizationPreference>Size</OptimizationPreference>
     <StripSymbols>true</StripSymbols>
+    <StackTraceSupport>false</StackTraceSupport>
+    <EventSourceSupport>false</EventSourceSupport>
+    <MetadataUpdaterSupport>false</MetadataUpdaterSupport>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
   </PropertyGroup>
 </Project>
