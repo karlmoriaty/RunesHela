@@ -58,6 +58,7 @@ jobs:
       - name: Measure AOT startup
         run: |
           python3 - <<'PY'
+          import os
           import statistics
           import subprocess
           import time
@@ -76,7 +77,11 @@ jobs:
           print(f"EmptyAot p50={empty_p50:.2f} ms p95={empty_p95:.2f} ms")
           print(f"AotCli   p50={app_p50:.2f} ms p95={app_p95:.2f} ms")
           print(f"Delta    p50={app_p50 - empty_p50:.2f} ms p95={app_p95 - empty_p95:.2f} ms")
+
+          empty_size = os.path.getsize("./artifacts/aot/linux-x64/EmptyAot")
+          app_size = os.path.getsize("./artifacts/aot/linux-x64/AotCli")
+          print(f"Size EmptyAot={empty_size} bytes AotCli={app_size} bytes Delta={app_size - empty_size} bytes")
           PY
 
       - name: Record AOT binary size
-        run: ls -lh artifacts/aot/linux-x64/AotCli artifacts/aot/linux-x64/EmptyAot
+        run: stat -c '%n %s bytes' artifacts/aot/linux-x64/AotCli artifacts/aot/linux-x64/EmptyAot
