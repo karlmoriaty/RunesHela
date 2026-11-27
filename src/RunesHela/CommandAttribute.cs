@@ -33,6 +33,11 @@ public sealed class CommandAttribute : Attribute
     public string? Description { get; set; }
 
     /// <summary>
+    /// Gets or sets optional aliases accepted for the command name.
+    /// </summary>
+    public string[] Aliases { get; set; } = Array.Empty<string>();
+
+    /// <summary>
     /// Gets or sets a value indicating whether the command is hidden from help output.
     /// </summary>
     public bool IsHidden { get; set; }

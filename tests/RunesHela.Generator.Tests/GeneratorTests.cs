@@ -30,8 +30,72 @@ public sealed class GeneratorTests
         Assert.Empty(result.CompileErrors);
         Assert.DoesNotContain(result.Diagnostics, static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
         Assert.Contains("case \"hello\":", result.GeneratedSource);
-        Assert.Contains("RunCommand0Async", result.GeneratedSource);
+        Assert.Contains("RunNode0Async", result.GeneratedSource);
         Assert.Contains("RunesHelaApp.RegisterEntry", result.GeneratedSource);
+    }
+
+    [Fact]
+    public void GeneratesNestedRouting()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("remote", Description = "Manage remotes.")]
+            public sealed class RemoteCommand
+            {
+                [Command("add", Description = "Add a remote.")]
+                public sealed class AddCommand
+                {
+                    public void Run()
+                    {
+                    }
+                }
+
+                [Command("list", Description = "List remotes.")]
+                public sealed class ListCommand
+                {
+                    public int Run()
+                    {
+                        return 0;
+                    }
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.CompileErrors);
+        Assert.Contains("case \"remote\":", result.GeneratedSource);
+        Assert.Contains("case \"add\":", result.GeneratedSource);
+        Assert.Contains("case \"list\":", result.GeneratedSource);
+        Assert.DoesNotContain(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL023");
+    }
+
+    [Fact]
+    public void ReportsNestedParentWithoutCommand()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            public sealed class NotACommand
+            {
+                [Command("inner")]
+                public sealed class InnerCommand
+                {
+                    public void Run()
+                    {
+                    }
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL023");
     }
 
     [Fact]
@@ -42,7 +106,7 @@ public sealed class GeneratorTests
 
             namespace Demo;
 
-            [Command("dup")]
+            [Command("dup", Description = "First.")]
             public sealed class FirstCommand
             {
                 public void Run()
@@ -50,7 +114,7 @@ public sealed class GeneratorTests
                 }
             }
 
-            [Command("dup")]
+            [Command("dup", Description = "Second.")]
             public sealed class SecondCommand
             {
                 public void Run()
@@ -72,7 +136,7 @@ public sealed class GeneratorTests
 
             namespace Demo;
 
-            [Command("noop")]
+            [Command("noop", Description = "No operation.")]
             public sealed class NoopCommand
             {
             }
@@ -87,36 +151,6 @@ public sealed class GeneratorTests
     }
 
     [Fact]
-    public void ReportsNestedCommands()
-    {
-        const string source = """
-            using RunesHela;
-
-            namespace Demo;
-
-            [Command("outer")]
-            public sealed class OuterCommand
-            {
-                public void Run()
-                {
-                }
-
-                [Command("inner")]
-                public sealed class InnerCommand
-                {
-                    public void Run()
-                    {
-                    }
-                }
-            }
-            """;
-
-        var result = RunGenerator(source);
-
-        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL023");
-    }
-
-    [Fact]
     public void ReportsUnsupportedHandlerParameters()
     {
         const string source = """
@@ -124,7 +158,7 @@ public sealed class GeneratorTests
 
             namespace Demo;
 
-            [Command("hello")]
+            [Command("hello", Description = "Say hello.")]
             public sealed class HelloCommand
             {
                 public void Run(string name)
@@ -147,7 +181,7 @@ public sealed class GeneratorTests
 
             namespace Demo;
 
-            [Command("info")]
+            [Command("info", Description = "Show info.")]
             public sealed class InfoCommand
             {
                 public Task RunAsync()
@@ -163,21 +197,238 @@ public sealed class GeneratorTests
         Assert.Contains("AwaitTaskAsync", result.GeneratedSource);
     }
 
-    private static GeneratorResult RunGenerator(string source)
+    [Fact]
+    public void ReportsMultipleHandlers()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("multi", Description = "Multiple handlers.")]
+            public sealed class MultiCommand
+            {
+                public void Run()
+                {
+                }
+
+                public int Execute()
+                {
+                    return 0;
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL007");
+    }
+
+    [Fact]
+    public void ReportsInvalidCommandName()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("Hello", Description = "Uppercase name.")]
+            public sealed class HelloCommand
+            {
+                public void Run()
+                {
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL013");
+    }
+
+    [Fact]
+    public void ReportsMissingDescriptionInfo()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("hello")]
+            public sealed class HelloCommand
+            {
+                public void Run()
+                {
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Contains(result.Diagnostics, static diagnostic =>
+            diagnostic.Id == "RHL005" && diagnostic.Severity == DiagnosticSeverity.Info);
+    }
+
+    [Fact]
+    public void SupportsAliases()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("hello", Aliases = new[] { "hi" }, Description = "Say hello.")]
+            public sealed class HelloCommand
+            {
+                public void Run()
+                {
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.CompileErrors);
+        Assert.Contains("case \"hi\":", result.GeneratedSource);
+    }
+
+    [Fact]
+    public void CachesOutputsForUnchangedCompilation()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("hello", Description = "Say hello.")]
+            public sealed class HelloCommand
+            {
+                public void Run()
+                {
+                }
+            }
+            """;
+
+        var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
+        var compilation = CreateCompilation(source, parseOptions);
+        var driver = CSharpGeneratorDriver.Create(
+            new[] { new RunesHelaGenerator().AsSourceGenerator() },
+            parseOptions: parseOptions,
+            driverOptions: new GeneratorDriverOptions(
+                IncrementalGeneratorOutputKind.None,
+                trackIncrementalGeneratorSteps: true));
+
+        driver = (CSharpGeneratorDriver)driver.RunGenerators(compilation);
+        driver = (CSharpGeneratorDriver)driver.RunGenerators(compilation);
+
+        var result = driver.GetRunResult();
+        var reasons = result.Results[0].TrackedOutputSteps
+            .SelectMany(static step => step.Value)
+            .SelectMany(static step => step.Outputs)
+            .Select(static output => output.Reason)
+            .ToArray();
+
+        Assert.Contains(reasons, static reason =>
+            reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged);
+    }
+
+    [Fact]
+    public void DiagnosticCatalogHasUniqueIds()
+    {
+        var ids = Diagnostics.All.Select(static descriptor => descriptor.Id).ToArray();
+
+        Assert.Equal(ids.Length, ids.Distinct(StringComparer.Ordinal).Count());
+        Assert.All(ids, static id => Assert.StartsWith("RHL", id));
+    }
+
+    [Fact]
+    public void ReportsAliasConflicts()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("hello", Aliases = new[] { "info" }, Description = "Say hello.")]
+            public sealed class HelloCommand
+            {
+                public void Run()
+                {
+                }
+            }
+
+            [Command("info", Description = "Show info.")]
+            public sealed class InfoCommand
+            {
+                public void Run()
+                {
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL028");
+    }
+
+    [Fact]
+    public void ReportsNoParameterlessConstructor()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("needs", Description = "Needs a dependency.")]
+            public sealed class NeedsCommand
+            {
+                public NeedsCommand(string dependency)
+                {
+                }
+
+                public void Run()
+                {
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL020");
+    }
+
+    [Fact]
+    public void ReportsUnsupportedReturnType()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("bad", Description = "Bad return type.")]
+            public sealed class BadCommand
+            {
+                public string Run()
+                {
+                    return string.Empty;
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL021");
+    }
+
+    internal static GeneratorResult RunGenerator(string source)
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
-
-        var syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions);
-
-        var compilation = CSharpCompilation.Create(
-            "TestAssembly",
-            new[] { syntaxTree },
-            GetReferences(),
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        var compilation = CreateCompilation(source, parseOptions);
 
         var driver = CSharpGeneratorDriver.Create(
             new[] { new RunesHelaGenerator().AsSourceGenerator() },
             parseOptions: parseOptions);
+
         driver = (CSharpGeneratorDriver)driver.RunGeneratorsAndUpdateCompilation(
             compilation,
             out var outputCompilation,
@@ -202,6 +453,15 @@ public sealed class GeneratorTests
         return new GeneratorResult(generatedSource, diagnostics, compileErrors);
     }
 
+    private static CSharpCompilation CreateCompilation(string source, CSharpParseOptions parseOptions)
+    {
+        return CSharpCompilation.Create(
+            "TestAssembly",
+            new[] { CSharpSyntaxTree.ParseText(source, parseOptions) },
+            GetReferences(),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+    }
+
     private static ImmutableArray<MetadataReference> GetReferences()
     {
         var trustedAssemblies = (string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")
@@ -218,7 +478,7 @@ public sealed class GeneratorTests
         return references.ToImmutableArray();
     }
 
-    private sealed record GeneratorResult(
+    internal sealed record GeneratorResult(
         string GeneratedSource,
         ImmutableArray<Diagnostic> Diagnostics,
         ImmutableArray<Diagnostic> CompileErrors);
