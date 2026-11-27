@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/AotCli/AotCli.csproj" />
+    <Project Path="samples/MinimalCli/MinimalCli.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/RunesHela.Generator/RunesHela.Generator.csproj" />
+    <Project Path="src/RunesHela/RunesHela.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RunesHela.Generator.Tests/RunesHela.Generator.Tests.csproj" />
+    <Project Path="tests/RunesHela.Tests/RunesHela.Tests.csproj" />
+  </Folder>
+</Solution>
