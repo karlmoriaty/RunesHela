@@ -19,6 +19,11 @@ public interface IConsole
     /// Gets a value indicating whether standard output is redirected.
     /// </summary>
     bool IsOutputRedirected { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether ANSI escape sequences may be written to the error stream.
+    /// </summary>
+    bool IsAnsiSupported => false;
 }
 
 /// <summary>
@@ -46,5 +51,25 @@ public static class RunesHelaConsole
         public TextWriter Error => Console.Error;
 
         public bool IsOutputRedirected => Console.IsOutputRedirected;
+
+        public bool IsAnsiSupported { get; } = DetectAnsiSupport();
+
+        private static bool DetectAnsiSupport()
+        {
+            if (Console.IsErrorRedirected)
+            {
+                return false;
+            }
+
+            if (Environment.GetEnvironmentVariable("NO_COLOR") is not null)
+            {
+                return false;
+            }
+
+            return !string.Equals(
+                Environment.GetEnvironmentVariable("TERM"),
+                "dumb",
+                StringComparison.OrdinalIgnoreCase);
+        }
     }
 }

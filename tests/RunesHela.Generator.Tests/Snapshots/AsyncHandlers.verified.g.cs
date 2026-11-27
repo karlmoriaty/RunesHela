@@ -10,15 +10,18 @@ internal static class __RunesHelaEntry
 {
     private const string AppName = "TestAssembly";
 
-    private const string RootHelp = "TestAssembly\nUsage: TestAssembly <command> [options]\n\nCommands:\n  job    Run a job.\n  count  Count things.\n\nOptions:\n  -h, --help     Show help.\n      --version  Show version.\n";
-    private const string Help0 = "Usage: TestAssembly job\nRun a job.\n\nOptions:\n  -h, --help  Show help.\n";
-    private const string Help1 = "Usage: TestAssembly count\nCount things.\n\nOptions:\n  -h, --help  Show help.\n";
+    private const string RootHelpText = "TestAssembly\n\nUsage: TestAssembly <command> [options]\n\nCommands:\n  job    Run a job.\n  count  Count things.\n\nOptions:\n  -h, --help     Show help.\n      --version  Show version.\n\nExit codes:\n  0  Success\n  1  Failure\n  2  Usage error";
+    private const string RootHelpJson = "{\"schemaVersion\":\"1.0\",\"kind\":\"application\",\"name\":\"TestAssembly\",\"path\":\"\",\"description\":null,\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"},{\"name\":\"version\",\"short\":null,\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show version.\"}],\"commands\":[{\"name\":\"job\",\"aliases\":[],\"description\":\"Run a job.\",\"hidden\":false},{\"name\":\"count\",\"aliases\":[],\"description\":\"Count things.\",\"hidden\":false}],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"}]}";
+    private const string HelpText0 = "Usage: TestAssembly job [options]\n\nRun a job.\n\nOptions:\n  -h, --help  Show help.\n\nExit codes:\n  0  Success\n  1  Failure\n  2  Usage error";
+    private const string HelpJson0 = "{\"schemaVersion\":\"1.0\",\"kind\":\"command\",\"name\":\"job\",\"path\":\"job\",\"description\":\"Run a job.\",\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"commands\":[],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"}]}";
+    private const string HelpText1 = "Usage: TestAssembly count [options]\n\nCount things.\n\nOptions:\n  -h, --help  Show help.\n\nExit codes:\n  0  Success\n  1  Failure\n  2  Usage error";
+    private const string HelpJson1 = "{\"schemaVersion\":\"1.0\",\"kind\":\"command\",\"name\":\"count\",\"path\":\"count\",\"description\":\"Count things.\",\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"commands\":[],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"}]}";
 
-    public static ValueTask<int> RunAsync(string[] args, CancellationToken cancellationToken)
+    public static ValueTask<int> RunAsync(string[] args, global::System.IServiceProvider? services, CancellationToken cancellationToken)
     {
         if (args.Length == 0)
         {
-            WriteRootHelp();
+            WriteRootHelp(WantsJson(args));
             return new ValueTask<int>(0);
         }
 
@@ -26,94 +29,170 @@ internal static class __RunesHelaEntry
         {
             case "-h":
             case "--help":
-                WriteRootHelp();
+                WriteRootHelp(WantsJson(args));
                 return new ValueTask<int>(0);
             case "--version":
                 global::RunesHela.RunesHelaConsole.Current.Out.WriteLine(global::RunesHela.RunesHelaApp.GetVersion());
                 return new ValueTask<int>(0);
             case "job":
-                return RunNode0Async(args.AsSpan(1), cancellationToken);
+                return RunNode0Async(args.AsSpan(1), services, cancellationToken);
             case "count":
-                return RunNode1Async(args.AsSpan(1), cancellationToken);
+                return RunNode1Async(args.AsSpan(1), services, cancellationToken);
             default:
-                WriteUnknownCommand(args[0]);
-                return new ValueTask<int>(2);
+                return new ValueTask<int>(global::RunesHela.RunesHelaErrors.UnknownCommand(args[0], AppName, WantsJson(args)));
         }
     }
 
-    private static ValueTask<int> RunNode0Async(ReadOnlySpan<string> args, CancellationToken cancellationToken)
+    private static ValueTask<int> RunNode0Async(ReadOnlySpan<string> args, global::System.IServiceProvider? services, CancellationToken cancellationToken)
     {
-        if (args.Length > 0 && (args[0] == "-h" || args[0] == "--help"))
+        if (WantsHelp(args, true))
         {
-            WriteNode0Help();
+            WriteNode0Help(WantsJson(args));
             return new ValueTask<int>(0);
         }
 
-        return InvokeNode0Async();
+        return InvokeNode0Async(args, services, cancellationToken);
     }
 
-    private static ValueTask<int> InvokeNode0Async()
+    private static ValueTask<int> InvokeNode0Async(ReadOnlySpan<string> args, global::System.IServiceProvider? services, CancellationToken cancellationToken)
     {
-        var command = new global::Demo.JobCommand();
+        var bindResult = BindNode0(args, services, cancellationToken, out var command);
+        if (bindResult != 0)
+        {
+            return new ValueTask<int>(bindResult);
+        }
+
         return AwaitTaskAsync(command.RunAsync());
     }
 
-    private static ValueTask<int> RunNode1Async(ReadOnlySpan<string> args, CancellationToken cancellationToken)
+    private static int BindNode0(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, out global::Demo.JobCommand command)
     {
-        if (args.Length > 0 && (args[0] == "-h" || args[0] == "--help"))
+        command = null!;
+        const string commandPath = "job";
+        var json = WantsJson(args);
+        var reader = new global::RunesHela.Parsing.CommandLineReader(args);
+
+        while (reader.TryRead(out var token))
         {
-            WriteNode1Help();
+            if (token.Kind == global::RunesHela.Parsing.CommandLineTokenKind.Option)
+            {
+                var name = token.Name;
+                if (name.Equals("help", global::System.StringComparison.OrdinalIgnoreCase)) continue;
+                if (name.Equals("json", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("plain", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("no-color", global::System.StringComparison.OrdinalIgnoreCase)) continue;
+                if (name.Equals("format", global::System.StringComparison.OrdinalIgnoreCase)) { reader.TryReadValue(out _); continue; }
+                return global::RunesHela.RunesHelaErrors.UnknownOption(commandPath, name.ToString(), json);
+            }
+            else if (token.Kind == global::RunesHela.Parsing.CommandLineTokenKind.Positional)
+            {
+                return global::RunesHela.RunesHelaErrors.UnexpectedArgument(commandPath, token.Value.ToString(), json);
+            }
+        }
+
+        var instance = new global::Demo.JobCommand();
+        command = instance;
+        return 0;
+    }
+
+    private static ValueTask<int> RunNode1Async(ReadOnlySpan<string> args, global::System.IServiceProvider? services, CancellationToken cancellationToken)
+    {
+        if (WantsHelp(args, true))
+        {
+            WriteNode1Help(WantsJson(args));
             return new ValueTask<int>(0);
         }
 
-        return InvokeNode1Async();
+        return InvokeNode1Async(args, services, cancellationToken);
     }
 
-    private static ValueTask<int> InvokeNode1Async()
+    private static ValueTask<int> InvokeNode1Async(ReadOnlySpan<string> args, global::System.IServiceProvider? services, CancellationToken cancellationToken)
     {
-        var command = new global::Demo.CountCommand();
+        var bindResult = BindNode1(args, services, cancellationToken, out var command);
+        if (bindResult != 0)
+        {
+            return new ValueTask<int>(bindResult);
+        }
+
         return command.RunAsync();
     }
 
-    private static void WriteRootHelp()
+    private static int BindNode1(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, out global::Demo.CountCommand command)
     {
-        global::RunesHela.RunesHelaConsole.Current.Out.WriteLine(RootHelp);
+        command = null!;
+        const string commandPath = "count";
+        var json = WantsJson(args);
+        var reader = new global::RunesHela.Parsing.CommandLineReader(args);
+
+        while (reader.TryRead(out var token))
+        {
+            if (token.Kind == global::RunesHela.Parsing.CommandLineTokenKind.Option)
+            {
+                var name = token.Name;
+                if (name.Equals("help", global::System.StringComparison.OrdinalIgnoreCase)) continue;
+                if (name.Equals("json", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("plain", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("no-color", global::System.StringComparison.OrdinalIgnoreCase)) continue;
+                if (name.Equals("format", global::System.StringComparison.OrdinalIgnoreCase)) { reader.TryReadValue(out _); continue; }
+                return global::RunesHela.RunesHelaErrors.UnknownOption(commandPath, name.ToString(), json);
+            }
+            else if (token.Kind == global::RunesHela.Parsing.CommandLineTokenKind.Positional)
+            {
+                return global::RunesHela.RunesHelaErrors.UnexpectedArgument(commandPath, token.Value.ToString(), json);
+            }
+        }
+
+        var instance = new global::Demo.CountCommand();
+        command = instance;
+        return 0;
     }
 
-    private static void WriteNode0Help()
+    private static bool WantsHelp(ReadOnlySpan<string> args, bool anywhere)
     {
-        global::RunesHela.RunesHelaConsole.Current.Out.WriteLine(Help0);
+        for (var i = 0; i < args.Length; i++)
+        {
+            var arg = args[i];
+            if (arg == "--") break;
+            if (arg == "-h" || arg == "--help") return true;
+            if (!anywhere) break;
+        }
+
+        return false;
     }
 
-    private static void WriteNode1Help()
+    private static bool WantsJson(ReadOnlySpan<string> args)
     {
-        global::RunesHela.RunesHelaConsole.Current.Out.WriteLine(Help1);
+        for (var i = 0; i < args.Length; i++)
+        {
+            var arg = args[i];
+            if (arg == "--") break;
+            if (arg == "--json") return true;
+
+            if (arg == "--format")
+            {
+                if (i + 1 < args.Length && args[i + 1] == "json") return true;
+                i++;
+                continue;
+            }
+
+            if (arg.StartsWith("--format=", StringComparison.Ordinal))
+            {
+                return arg.AsSpan(9).SequenceEqual("json");
+            }
+        }
+
+        return false;
     }
 
-    private static void WriteUnknownCommand(string command)
+    private static void WriteRootHelp(bool json)
     {
-        var error = global::RunesHela.RunesHelaConsole.Current.Error;
-        error.Write("Unknown command '");
-        error.Write(command);
-        error.WriteLine("'.");
-        error.Write("Run '");
-        error.Write(AppName);
-        error.WriteLine(" --help' to list commands.");
+        global::RunesHela.RunesHelaConsole.Current.Out.WriteLine(json ? RootHelpJson : RootHelpText);
     }
 
-    private static void WriteUnknownSubcommand(string path, string command)
+    private static void WriteNode0Help(bool json)
     {
-        var error = global::RunesHela.RunesHelaConsole.Current.Error;
-        error.Write("Unknown command '");
-        error.Write(path);
-        error.Write(" ");
-        error.Write(command);
-        error.WriteLine("'.");
-        error.Write("Run '");
-        error.Write(AppName);
-        error.Write(" ");
-        error.Write(path);
-        error.WriteLine(" --help' to list subcommands.");
+        global::RunesHela.RunesHelaConsole.Current.Out.WriteLine(json ? HelpJson0 : HelpText0);
+    }
+
+    private static void WriteNode1Help(bool json)
+    {
+        global::RunesHela.RunesHelaConsole.Current.Out.WriteLine(json ? HelpJson1 : HelpText1);
     }
 
     private static async ValueTask<int> AwaitTaskAsync(Task task)

@@ -1,9 +1,15 @@
+using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 
 namespace RunesHela.Generator;
 
 internal static class TypeAnalyzer
 {
+    private static readonly SymbolDisplayFormat TypeFormat = SymbolDisplayFormat.FullyQualifiedFormat
+        .WithMiscellaneousOptions(
+            SymbolDisplayFormat.FullyQualifiedFormat.MiscellaneousOptions |
+            SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
+
     public static bool TryAnalyze(
         ITypeSymbol type,
         Compilation compilation,
@@ -33,14 +39,17 @@ internal static class TypeAnalyzer
 
             model = new TypeModel(
                 TypeKind.Array,
-                current.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                current.ToDisplayString(TypeFormat),
+                "Array",
                 isNullable,
                 isReferenceType: true,
+                isSpanParsable: false,
+                EquatableArray<string>.Empty,
                 element);
             return true;
         }
 
-        var kind = GetKind(current, compilation);
+        var kind = GetKind(current, compilation, out var isSpanParsable);
 
         if (kind == TypeKind.Unsupported)
         {
@@ -49,17 +58,40 @@ internal static class TypeAnalyzer
             return false;
         }
 
+        var simpleName = current is INamedTypeSymbol namedType ? namedType.Name : current.Name;
+        var members = kind == TypeKind.Enum ? ReadEnumMembers(current) : EquatableArray<string>.Empty;
+
         model = new TypeModel(
             kind,
-            current.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+            type.ToDisplayString(TypeFormat),
+            simpleName,
             isNullable,
             current.IsReferenceType,
+            isSpanParsable,
+            members,
             elementType: null);
         return true;
     }
 
-    private static TypeKind GetKind(ITypeSymbol type, Compilation compilation)
+    private static EquatableArray<string> ReadEnumMembers(ITypeSymbol type)
     {
+        var names = new List<string>();
+
+        foreach (var member in type.GetMembers())
+        {
+            if (member is IFieldSymbol field && field.HasConstantValue && field.Name != "value__")
+            {
+                names.Add(field.Name);
+            }
+        }
+
+        return new EquatableArray<string>(names.ToArray());
+    }
+
+    private static TypeKind GetKind(ITypeSymbol type, Compilation compilation, out bool isSpanParsable)
+    {
+        isSpanParsable = false;
+
         switch (type.SpecialType)
         {
             case SpecialType.System_String:
@@ -114,14 +146,15 @@ internal static class TypeAnalyzer
 
         foreach (var @interface in type.AllInterfaces)
         {
-            if (parsable is not null &&
-                SymbolEqualityComparer.Default.Equals(@interface.OriginalDefinition, parsable))
+            if (spanParsable is not null &&
+                SymbolEqualityComparer.Default.Equals(@interface.OriginalDefinition, spanParsable))
             {
+                isSpanParsable = true;
                 return TypeKind.Parsable;
             }
 
-            if (spanParsable is not null &&
-                SymbolEqualityComparer.Default.Equals(@interface.OriginalDefinition, spanParsable))
+            if (parsable is not null &&
+                SymbolEqualityComparer.Default.Equals(@interface.OriginalDefinition, parsable))
             {
                 return TypeKind.Parsable;
             }

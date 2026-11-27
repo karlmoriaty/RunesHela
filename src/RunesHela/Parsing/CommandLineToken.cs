@@ -24,12 +24,14 @@ public readonly ref struct CommandLineToken
         CommandLineTokenKind kind,
         ReadOnlySpan<char> name,
         ReadOnlySpan<char> value,
-        bool hasValue)
+        bool hasValue,
+        int prefixLength)
     {
         Kind = kind;
         Name = name;
         Value = value;
         HasValue = hasValue;
+        PrefixLength = prefixLength;
     }
 
     /// <summary>Gets the token kind.</summary>
@@ -44,24 +46,28 @@ public readonly ref struct CommandLineToken
     /// <summary>Gets a value indicating whether the option carried an inline value such as <c>--name=value</c>.</summary>
     public bool HasValue { get; }
 
+    /// <summary>Gets the number of leading dashes: 1 for <c>-n</c>, 2 for <c>--name</c>, and 0 for positionals.</summary>
+    public int PrefixLength { get; }
+
     /// <summary>Creates an option token.</summary>
     public static CommandLineToken Option(
         ReadOnlySpan<char> name,
         ReadOnlySpan<char> value = default,
-        bool hasValue = false)
+        bool hasValue = false,
+        int prefixLength = 2)
     {
-        return new CommandLineToken(CommandLineTokenKind.Option, name, value, hasValue);
+        return new CommandLineToken(CommandLineTokenKind.Option, name, value, hasValue, prefixLength);
     }
 
     /// <summary>Creates a positional token.</summary>
     public static CommandLineToken Positional(ReadOnlySpan<char> value)
     {
-        return new CommandLineToken(CommandLineTokenKind.Positional, default, value, false);
+        return new CommandLineToken(CommandLineTokenKind.Positional, default, value, false, 0);
     }
 
     /// <summary>Creates the <c>--</c> terminator token.</summary>
     public static CommandLineToken Terminator()
     {
-        return new CommandLineToken(CommandLineTokenKind.Terminator, default, default, false);
+        return new CommandLineToken(CommandLineTokenKind.Terminator, default, default, false, 0);
     }
 }

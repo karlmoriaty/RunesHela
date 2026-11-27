@@ -1,8 +1,8 @@
 # RunesHela · 设计文档集
 
 > **项目名称**：RunesHela（已选定，2026-11-26；见 [06 决策记录](./docs/06-决策记录.md) D-06）
-> **状态**：**M1 已完成（2026-11-27）**，下一步 M2（选项/参数绑定与 MVP）
-> **日期**：2026-11-26
+> **状态**：**M2 已完成（2026-11-27）**，下一步 M3（性能与微命令）
+> **日期**：2026-11-27
 
 ---
 
@@ -13,6 +13,70 @@
 一句话：
 
 > **把 CLI 当作编译器问题：一份声明，编译出全部产物。**
+
+---
+
+## 快速开始（5 分钟）
+
+1. 新建控制台项目，引用 `RunesHela`（本地开发用 `ProjectReference` 同时引用 `RunesHela.Generator`，并设置 `OutputItemType="Analyzer"`）。
+2. 定义命令类（**不需要** `partial`、接口或基类）：
+
+```csharp
+using RunesHela;
+
+/// <summary>
+/// Greets a person.
+/// </summary>
+/// <example>greet Ada --count 2</example>
+[Command("greet", Description = "Greets a person.")]
+public sealed class GreetCommand
+{
+    /// <summary>Person to greet.</summary>
+    [Argument(0, Description = "Person to greet.")]
+    public string Name { get; init; } = "world";
+
+    /// <summary>Repeat count.</summary>
+    [Option(Short = 'c', Description = "Repeat count.", Env = "APP_COUNT")]
+    [Range(1, 5)]
+    public int Count { get; init; } = 1;
+
+    public int Run()
+    {
+        for (var i = 0; i < Count; i++)
+        {
+            Console.WriteLine("Hello, " + Name + "!");
+        }
+
+        return 0;
+    }
+}
+```
+
+3. 入口只写一行：`return RunesHelaApp.Run(args);`
+4. 运行：
+
+```text
+app greet Ada --count 2
+app greet --help
+app greet --help --json
+```
+
+> 用文档注释（`<summary>`/`<example>`）补充帮助时，项目需启用
+> `<GenerateDocumentationFile>true</GenerateDocumentationFile>`；否则请用
+> `[Command(Description = ...)]` / `[Option(Description = ...)]`。
+
+### M2 已具备的能力
+
+- **纯 POCO 绑定**：`[Option]`/`[Argument]` 属性绑定，支持 `set`/`init`，无需 `partial`。
+- **选项语法**：`--opt=value`、`--opt value`、`-o value`、`-o=value`、布尔旗标、`--no-flag`、`--` 终止符、负数位置参数。
+- **类型转换**：基元/枚举/`Guid`/`DateTime(Offset)`/`TimeSpan`/`Uri`/`FileInfo`/`DirectoryInfo`/数组/可空/`IParsable`。
+- **优先级**：CLI > 环境变量（`Env = "..."`）> 属性初始化器默认值。
+- **校验**：`[Required]`、`[Range]`、`[Regex]`、`[Length]` 在生成代码中执行，零反射。
+- **帮助**：人类可读（Usage/参数/命令/选项/示例/退出码）与 `--help --json` 机器可读，同源于模型。
+- **错误契约**：`RunesHelaError`（`code`/`message`/`hint`/`nextSteps`/`docsUrl`/`exitCode`），文本与 JSON 两种渲染；数据走 stdout，诊断走 stderr。
+- **安全与终端**：`[Secret]` 在帮助/错误中脱敏；`NO_COLOR`/`TERM=dumb`/非 TTY 自动去色；帮助不含 ANSI。
+- **DI**：命令无无参构造时，生成器通过 `IServiceProvider` 解析构造参数（`RunAsync(args, services)`）。
+- **诊断**：`RHL001`–`RHL036` 编译期诊断，见 [errors.md](./docs/errors.md)。
 
 ---
 
@@ -28,6 +92,8 @@
 | 05 | [架构决策记录（ADR）](./docs/05-架构决策记录-ADR.md) | 16 个关键决策的背景、选项、影响、风险 | 架构/维护者 | ✅ 已决议（待审核） |
 | 06 | [决策记录](./docs/06-决策记录.md) | **你已做出的 14 项决议** + 复核提示 | 你 | ✅ 已决议 |
 | 07 | [M0 基准报告](./docs/benchmarks/M0-基准报告.md) | 解析/帮助/错误/路由/AOT 实测与预算对照 | 开发/评审 | ✅ M0 通过 |
+| 08 | [M2 基准报告](./docs/benchmarks/M2-基准报告.md) | M2 回归：帮助 0 B、错误 304 B、集成测试 103 项 | 开发/评审 | ✅ M2 通过 |
+| 09 | [错误码与诊断](./docs/errors.md) | 运行时 `RHL_*` 错误码、`RHLxxx` 诊断码、退出码 | 开发/使用 | ✅ 随 M2 更新 |
 
 ---
 
@@ -90,11 +156,7 @@
 
 ## 边界声明
 
-- 当前仅完成文档，**没有创建任何项目文件、代码或构建脚本**。
-- 性能数字为目标值/竞品公开结论，需在 M0 用真实基准校准。
-- 市场数据为 2026-11-26 快照，来源见 00 文档第 15 节。
-- 文档语言：英文优先，中文版按需提供（D-10=B）。
-- 当前已完成 **M1**（2026-11-27）：模型 IR、嵌套命令、诊断码表、类型分析、增量缓存、快照测试；下一步 M2。
+- 当前已完成 **M2**（2026-11-27）：纯 POCO 选项/参数绑定、默认值/ENV/校验、人类与 JSON 帮助、结构化错误、Secret 脱敏、TTY/NO_COLOR、构造注入与集成测试；下一步 M3。
 - 以上决议已按你的选择写入文档；项目已按决议进入开发。
 
 ---

@@ -161,8 +161,8 @@ internal static class Diagnostics
 
     public static readonly DiagnosticDescriptor NoParameterlessConstructor = new(
         id: "RHL020",
-        title: "No parameterless constructor",
-        messageFormat: "Command '{0}' must have a public or internal parameterless constructor or a static handler",
+        title: "No usable constructor",
+        messageFormat: "Command '{0}' must have an accessible parameterless constructor or a single accessible constructor whose parameters can be resolved from IServiceProvider",
         category: "RunesHela",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -239,6 +239,62 @@ internal static class Diagnostics
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
+    public static readonly DiagnosticDescriptor InvalidOptionName = new(
+        id: "RHL030",
+        title: "Invalid option name",
+        messageFormat: "Option name '{0}' is invalid; use lowercase letters, digits, '-' or '_'",
+        category: "RunesHela",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor InvalidBoundMember = new(
+        id: "RHL031",
+        title: "Invalid bound member",
+        messageFormat: "Member '{0}' cannot be bound: {1}",
+        category: "RunesHela",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor NonConstantDefault = new(
+        id: "RHL032",
+        title: "Default value is not a compile-time constant",
+        messageFormat: "Member '{0}' has an initializer that is not a compile-time constant; use a constant literal or set the value from the command line",
+        category: "RunesHela",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor InvalidShortName = new(
+        id: "RHL033",
+        title: "Invalid short option name",
+        messageFormat: "Short option name '{0}' is invalid; use a single letter or digit",
+        category: "RunesHela",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor InvalidArgumentPosition = new(
+        id: "RHL034",
+        title: "Invalid argument position",
+        messageFormat: "Argument position '{0}' on member '{1}' is invalid; use a non-negative integer",
+        category: "RunesHela",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor InvalidValidation = new(
+        id: "RHL035",
+        title: "Invalid validation attribute",
+        messageFormat: "Validation on member '{0}' is not supported: {1}",
+        category: "RunesHela",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor ConflictingBindingAttributes = new(
+        id: "RHL036",
+        title: "Conflicting binding attributes",
+        messageFormat: "Member '{0}' cannot be both an option and an argument",
+        category: "RunesHela",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
     public static readonly DiagnosticDescriptor GeneratorError = new(
         id: "RHL999",
         title: "Generator error",
@@ -277,6 +333,13 @@ internal static class Diagnostics
         InvalidAlias,
         AliasConflictsWithSibling,
         UnsupportedType,
+        InvalidOptionName,
+        InvalidBoundMember,
+        NonConstantDefault,
+        InvalidShortName,
+        InvalidArgumentPosition,
+        InvalidValidation,
+        ConflictingBindingAttributes,
         GeneratorError);
 
     private static readonly Dictionary<string, DiagnosticDescriptor> ById = CreateById();

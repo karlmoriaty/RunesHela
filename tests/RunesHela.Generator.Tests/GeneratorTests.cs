@@ -147,7 +147,7 @@ public sealed class GeneratorTests
         Assert.Empty(result.CompileErrors);
         Assert.Contains(result.Diagnostics, static diagnostic =>
             diagnostic.Id == "RHL006" && diagnostic.Severity == DiagnosticSeverity.Warning);
-        Assert.Contains("is not implemented.", result.GeneratedSource);
+        Assert.Contains("NotImplemented", result.GeneratedSource);
     }
 
     [Fact]
@@ -372,7 +372,7 @@ public sealed class GeneratorTests
     }
 
     [Fact]
-    public void ReportsNoParameterlessConstructor()
+    public void ReportsAmbiguousConstructors()
     {
         const string source = """
             using RunesHela;
@@ -386,6 +386,10 @@ public sealed class GeneratorTests
                 {
                 }
 
+                public NeedsCommand(int dependency)
+                {
+                }
+
                 public void Run()
                 {
                 }
@@ -395,6 +399,281 @@ public sealed class GeneratorTests
         var result = RunGenerator(source);
 
         Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL020");
+    }
+
+    [Fact]
+    public void GeneratesConstructorInjection()
+    {
+        const string source = """
+            using System;
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("di", Description = "Uses a service.")]
+            public sealed class DiCommand
+            {
+                public DiCommand(IDisposable dependency)
+                {
+                }
+
+                public void Run()
+                {
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.CompileErrors);
+        Assert.Contains("GetService(typeof(global::System.IDisposable))", result.GeneratedSource);
+        Assert.Contains("ServiceMissing", result.GeneratedSource);
+    }
+
+    [Fact]
+    public void GeneratesOptionAndArgumentBinding()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("deploy", Description = "Deploy a target.")]
+            public sealed class DeployCommand
+            {
+                [Argument(0, Description = "Target.")]
+                public string Target { get; init; } = "all";
+
+                [Option(Short = 'e', Description = "Environment.", Env = "APP_ENV")]
+                public string Environment { get; init; } = "dev";
+
+                [Option(Description = "Force the deployment.")]
+                public bool Force { get; init; }
+
+                public int Run()
+                {
+                    return 0;
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.CompileErrors);
+        Assert.Contains("GetEnvironmentVariable(\"APP_ENV\")", result.GeneratedSource);
+        Assert.Contains("name.Equals(\"no-force\", global::System.StringComparison.OrdinalIgnoreCase)", result.GeneratedSource);
+        Assert.Contains("Environment = o", result.GeneratedSource);
+        Assert.Contains("Target = a", result.GeneratedSource);
+    }
+
+    [Fact]
+    public void ReportsDuplicateOptionNames()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("dup", Description = "Duplicate options.")]
+            public sealed class DupCommand
+            {
+                [Option("target", Description = "First.")]
+                public string First { get; init; } = "";
+
+                [Option("target", Description = "Second.")]
+                public string Second { get; init; } = "";
+
+                public void Run()
+                {
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL002");
+    }
+
+    [Fact]
+    public void ReportsRequiredOptionWithDefault()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("conflict", Description = "Required and default.")]
+            public sealed class ConflictCommand
+            {
+                [Option(Description = "Count.", Required = true)]
+                public int Count { get; init; } = 3;
+
+                public void Run()
+                {
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL003");
+    }
+
+    [Fact]
+    public void ReportsNonConstantDefault()
+    {
+        const string source = """
+            using System;
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("dynamic", Description = "Dynamic default.")]
+            public sealed class DynamicCommand
+            {
+                [Option(Description = "Name.")]
+                public string Name { get; init; } = Environment.MachineName;
+
+                public void Run()
+                {
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL032");
+    }
+
+    [Fact]
+    public void ReportsInvalidShortName()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("short", Description = "Bad short name.")]
+            public sealed class ShortCommand
+            {
+                [Option(Short = '!', Description = "Value.")]
+                public string Value { get; init; } = "";
+
+                public void Run()
+                {
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL033");
+    }
+
+    [Fact]
+    public void ReportsFieldBinding()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("field", Description = "Field binding.")]
+            public sealed class FieldCommand
+            {
+                [Option(Description = "Value.")]
+                public string Value = "";
+
+                public void Run()
+                {
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL031");
+    }
+
+    [Fact]
+    public void ReportsUnsupportedOptionType()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("unsupported", Description = "Unsupported option type.")]
+            public sealed class UnsupportedCommand
+            {
+                [Option(Description = "Value.")]
+                public object Value { get; init; } = new();
+
+                public void Run()
+                {
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL029");
+    }
+
+    [Fact]
+    public void ReportsArrayArgumentThatIsNotLast()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("arrays", Description = "Array argument.")]
+            public sealed class ArraysCommand
+            {
+                [Argument(0, Description = "Items.")]
+                public string[] Items { get; init; } = System.Array.Empty<string>();
+
+                [Argument(1, Description = "Tail.")]
+                public string Tail { get; init; } = "";
+
+                public void Run()
+                {
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL011");
+    }
+
+    [Fact]
+    public void ReportsOptionalArgumentBeforeRequired()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("order", Description = "Argument order.")]
+            public sealed class OrderCommand
+            {
+                [Argument(0, Description = "Optional.")]
+                public string? Optional { get; init; }
+
+                [Argument(1, Description = "Required.")]
+                public string Required2 { get; init; }
+
+                public void Run()
+                {
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL009");
     }
 
     [Fact]

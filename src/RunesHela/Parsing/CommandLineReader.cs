@@ -137,13 +137,17 @@ public ref struct CommandLineReader
             _lastHasValue = false;
             _lastValueStart = 0;
             _lastValueLength = 0;
-            return CommandLineToken.Option(body);
+            return CommandLineToken.Option(body, prefixLength: prefixLength);
         }
 
         _lastHasValue = true;
         _lastValueStart = prefixLength + equals + 1;
         _lastValueLength = body.Length - equals - 1;
 
-        return CommandLineToken.Option(body[..equals], body[(equals + 1)..], hasValue: true);
+        return CommandLineToken.Option(
+            body[..equals],
+            body[(equals + 1)..],
+            hasValue: true,
+            prefixLength: prefixLength);
     }
 }

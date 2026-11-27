@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using Microsoft.CodeAnalysis;
 
@@ -19,11 +18,12 @@ internal static class CommandModelFactory
 
         if (context.TargetSymbol is not INamedTypeSymbol type)
         {
-            return new CommandCandidate(null, new EquatableArray<DiagnosticInfo>(Array.Empty<DiagnosticInfo>()));
+            return new CommandCandidate(null, EquatableArray<DiagnosticInfo>.Empty);
         }
 
         var location = LocationInfo.From(context.TargetNode.GetLocation());
-        var appName = context.SemanticModel.Compilation.AssemblyName ?? "app";
+        var compilation = context.SemanticModel.Compilation;
+        var appName = compilation.AssemblyName ?? "app";
 
         if (type.IsGenericType)
         {
@@ -49,7 +49,7 @@ internal static class CommandModelFactory
             ? attribute.ConstructorArguments[0].Value as string
             : null;
 
-        var name = string.IsNullOrWhiteSpace(explicitName) ? DeriveName(type.Name) : explicitName!.Trim();
+        var name = string.IsNullOrWhiteSpace(explicitName) ? Names.ToCommandName(type.Name) : explicitName!.Trim();
 
         if (name.Length == 0)
         {
@@ -57,7 +57,7 @@ internal static class CommandModelFactory
             return CreateResult(null, diagnostics);
         }
 
-        if (!IsValidName(name))
+        if (!Names.IsValidCliName(name))
         {
             diagnostics.Add(new DiagnosticInfo("RHL013", location, name));
             return CreateResult(null, diagnostics);
@@ -74,7 +74,7 @@ internal static class CommandModelFactory
 
         foreach (var alias in aliases)
         {
-            if (!IsValidName(alias))
+            if (!Names.IsValidCliName(alias))
             {
                 diagnostics.Add(new DiagnosticInfo("RHL027", location, alias, name));
                 return CreateResult(null, diagnostics);
@@ -99,7 +99,7 @@ internal static class CommandModelFactory
 
         if (string.IsNullOrWhiteSpace(description))
         {
-            description = GetSummary(type, cancellationToken);
+            description = DocumentationReader.GetSummary(type, cancellationToken);
         }
 
         description ??= string.Empty;
@@ -113,6 +113,11 @@ internal static class CommandModelFactory
             .FirstOrDefault(static argument => argument.Key == "IsHidden")
             .Value.Value is true;
 
+        var isDestructive = attribute.NamedArguments
+            .FirstOrDefault(static argument => argument.Key == "IsDestructive")
+            .Value.Value is true;
+
+        var examples = DocumentationReader.GetExamples(type, cancellationToken);
         var handlers = FindHandlers(type);
 
         if (handlers.Count > 1)
@@ -125,53 +130,54 @@ internal static class CommandModelFactory
         var returnKind = HandlerReturnKind.None;
         string? handlerName = null;
 
-        if (handler is null)
+        if (handler is not null)
         {
-            return CreateResult(
-                new CommandModel(
-                    appName,
-                    name,
-                    description,
-                    type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                    parentTypeFullName,
-                    type.IsStatic,
-                    isHidden,
-                    new EquatableArray<string>(aliases),
-                    null,
-                    HandlerReturnKind.None,
-                    location),
-                diagnostics);
+            if (handler.Parameters.Length > 0)
+            {
+                diagnostics.Add(new DiagnosticInfo("RHL004", location, type.Name, handler.Name));
+                return CreateResult(null, diagnostics);
+            }
+
+            if (!TryMapReturnKind(handler, compilation, out returnKind))
+            {
+                diagnostics.Add(new DiagnosticInfo(
+                    "RHL021",
+                    location,
+                    type.Name,
+                    handler.Name,
+                    handler.ReturnType.ToDisplayString()));
+                return CreateResult(null, diagnostics);
+            }
+
+            if (IsAwaitable(returnKind) && !handler.Name.EndsWith("Async", StringComparison.Ordinal))
+            {
+                diagnostics.Add(new DiagnosticInfo("RHL012", location, handler.Name));
+            }
+
+            handlerName = handler.Name;
         }
 
-        if (handler.Parameters.Length > 0)
+        var hasParameterlessConstructor = true;
+        var constructorParameters = EquatableArray<string>.Empty;
+
+        if (!type.IsStatic)
         {
-            diagnostics.Add(new DiagnosticInfo("RHL004", location, type.Name, handler.Name));
+            if (!TryReadConstructor(type, out hasParameterlessConstructor, out var parameters))
+            {
+                diagnostics.Add(new DiagnosticInfo("RHL020", location, name));
+                return CreateResult(null, diagnostics);
+            }
+
+            constructorParameters = parameters;
+        }
+
+        var binding = BindingModelFactory.Create(compilation, type, location, cancellationToken);
+        diagnostics.AddRange(binding.Diagnostics);
+
+        if (binding.Diagnostics.Count > 0)
+        {
             return CreateResult(null, diagnostics);
         }
-
-        if (!TryMapReturnKind(handler, context.SemanticModel.Compilation, out returnKind))
-        {
-            diagnostics.Add(new DiagnosticInfo(
-                "RHL021",
-                location,
-                type.Name,
-                handler.Name,
-                handler.ReturnType.ToDisplayString()));
-            return CreateResult(null, diagnostics);
-        }
-
-        if (IsAwaitable(returnKind) && !handler.Name.EndsWith("Async", StringComparison.Ordinal))
-        {
-            diagnostics.Add(new DiagnosticInfo("RHL012", location, handler.Name));
-        }
-
-        if (!type.IsStatic && !HasParameterlessConstructor(type))
-        {
-            diagnostics.Add(new DiagnosticInfo("RHL020", location, name));
-            return CreateResult(null, diagnostics);
-        }
-
-        handlerName = handler.Name;
 
         var model = new CommandModel(
             appName,
@@ -181,7 +187,13 @@ internal static class CommandModelFactory
             parentTypeFullName,
             type.IsStatic,
             isHidden,
+            isDestructive,
             new EquatableArray<string>(aliases),
+            new EquatableArray<OptionModel>(binding.Options.ToArray()),
+            new EquatableArray<ParameterModel>(binding.Parameters.ToArray()),
+            new EquatableArray<string>(examples),
+            constructorParameters,
+            hasParameterlessConstructor,
             handlerName,
             returnKind,
             location);
@@ -240,24 +252,6 @@ internal static class CommandModelFactory
         return false;
     }
 
-    private static bool IsValidName(string name)
-    {
-        if (name.Length == 0 || name[0] == '-')
-        {
-            return false;
-        }
-
-        foreach (var c in name)
-        {
-            if (!(char.IsLower(c) || char.IsDigit(c) || c == '-' || c == '_'))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     private static List<IMethodSymbol> FindHandlers(INamedTypeSymbol type)
     {
         var result = new List<IMethodSymbol>();
@@ -284,6 +278,50 @@ internal static class CommandModelFactory
         }
 
         return result;
+    }
+
+    private static bool TryReadConstructor(
+        INamedTypeSymbol type,
+        out bool hasParameterlessConstructor,
+        out EquatableArray<string> parameters)
+    {
+        hasParameterlessConstructor = true;
+        parameters = EquatableArray<string>.Empty;
+
+        var constructors = new List<IMethodSymbol>();
+
+        foreach (var constructor in type.InstanceConstructors)
+        {
+            if (constructor.DeclaredAccessibility == Accessibility.Public ||
+                constructor.DeclaredAccessibility == Accessibility.Internal)
+            {
+                constructors.Add(constructor);
+            }
+        }
+
+        foreach (var constructor in constructors)
+        {
+            if (constructor.Parameters.Length == 0)
+            {
+                return true;
+            }
+        }
+
+        if (constructors.Count != 1)
+        {
+            return false;
+        }
+
+        var values = new string[constructors[0].Parameters.Length];
+
+        for (var i = 0; i < values.Length; i++)
+        {
+            values[i] = constructors[0].Parameters[i].Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        }
+
+        hasParameterlessConstructor = false;
+        parameters = new EquatableArray<string>(values);
+        return true;
     }
 
     private static bool TryMapReturnKind(
@@ -353,117 +391,5 @@ internal static class CommandModelFactory
     {
         return kind is HandlerReturnKind.Task or HandlerReturnKind.TaskOfInt
             or HandlerReturnKind.ValueTask or HandlerReturnKind.ValueTaskOfInt;
-    }
-
-    private static bool HasParameterlessConstructor(INamedTypeSymbol type)
-    {
-        foreach (var constructor in type.InstanceConstructors)
-        {
-            if (constructor.Parameters.Length == 0 &&
-                (constructor.DeclaredAccessibility == Accessibility.Public ||
-                 constructor.DeclaredAccessibility == Accessibility.Internal))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static string DeriveName(string typeName)
-    {
-        const string suffix = "Command";
-
-        if (typeName.Length > suffix.Length && typeName.EndsWith(suffix, StringComparison.Ordinal))
-        {
-            typeName = typeName.Substring(0, typeName.Length - suffix.Length);
-        }
-
-        var builder = new StringBuilder(typeName.Length + 4);
-
-        for (var i = 0; i < typeName.Length; i++)
-        {
-            var c = typeName[i];
-
-            if (char.IsUpper(c) && i > 0 &&
-                (char.IsLower(typeName[i - 1]) || char.IsDigit(typeName[i - 1])))
-            {
-                builder.Append('-');
-            }
-
-            builder.Append(char.ToLowerInvariant(c));
-        }
-
-        return builder.Length == 0 ? "command" : builder.ToString();
-    }
-
-    private static string? GetSummary(INamedTypeSymbol type, CancellationToken cancellationToken)
-    {
-        var xml = type.GetDocumentationCommentXml(cancellationToken: cancellationToken);
-
-        if (xml is null || xml.Length == 0)
-        {
-            return null;
-        }
-
-        xml = xml.Trim();
-
-        if (xml.Length == 0)
-        {
-            return null;
-        }
-
-        const string openTag = "<summary>";
-        const string closeTag = "</summary>";
-
-        var start = xml.IndexOf(openTag, StringComparison.Ordinal);
-        if (start < 0)
-        {
-            return null;
-        }
-
-        start += openTag.Length;
-
-        var end = xml.IndexOf(closeTag, start, StringComparison.Ordinal);
-        if (end < 0)
-        {
-            return null;
-        }
-
-        var summary = xml.Substring(start, end - start);
-        summary = summary.Replace("\r", " ").Replace("\n", " ");
-        summary = StripTags(summary);
-
-        while (summary.Contains("  "))
-        {
-            summary = summary.Replace("  ", " ");
-        }
-
-        summary = summary.Trim();
-        return summary.Length == 0 ? null : summary;
-    }
-
-    private static string StripTags(string text)
-    {
-        var builder = new StringBuilder(text.Length);
-        var insideTag = false;
-
-        foreach (var c in text)
-        {
-            if (c == '<')
-            {
-                insideTag = true;
-            }
-            else if (c == '>')
-            {
-                insideTag = false;
-            }
-            else if (!insideTag)
-            {
-                builder.Append(c);
-            }
-        }
-
-        return builder.ToString();
     }
 }
