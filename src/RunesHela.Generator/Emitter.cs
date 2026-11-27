@@ -243,14 +243,16 @@ internal static class Emitter
             .AppendLine("Async(ReadOnlySpan<string> args, global::System.IServiceProvider? services, CancellationToken cancellationToken)");
         builder.AppendLine("    {");
 
+        builder.AppendLine("        var json = WantsJson(args);");
+
         if (model.IsStatic)
         {
-            builder.Append("        var bindResult = BindNode").Append(index).AppendLine("(args, services, cancellationToken);");
+            builder.Append("        var bindResult = BindNode").Append(index).AppendLine("(args, services, cancellationToken, json);");
         }
         else
         {
             builder.Append("        var bindResult = BindNode").Append(index)
-                .AppendLine("(args, services, cancellationToken, out var command);");
+                .AppendLine("(args, services, cancellationToken, json, out var command);");
         }
 
         builder.AppendLine("        if (bindResult != 0)");

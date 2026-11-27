@@ -52,7 +52,8 @@ internal static class __RunesHelaEntry
 
     private static ValueTask<int> InvokeNode0Async(ReadOnlySpan<string> args, global::System.IServiceProvider? services, CancellationToken cancellationToken)
     {
-        var bindResult = BindNode0(args, services, cancellationToken, out var command);
+        var json = WantsJson(args);
+        var bindResult = BindNode0(args, services, cancellationToken, json, out var command);
         if (bindResult != 0)
         {
             return new ValueTask<int>(bindResult);
@@ -61,11 +62,10 @@ internal static class __RunesHelaEntry
         return new ValueTask<int>(command.Run());
     }
 
-    private static int BindNode0(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, out global::Demo.DeployCommand command)
+    private static int BindNode0(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, bool json, out global::Demo.DeployCommand command)
     {
         command = null!;
         const string commandPath = "deploy";
-        var json = WantsJson(args);
         string o0 = "dev";
         var o0Set = false;
         int o1 = 1;
@@ -83,15 +83,18 @@ internal static class __RunesHelaEntry
                 var negated = false;
                 if (token.PrefixLength == 2)
                 {
-                    if (name.Equals("environment", global::System.StringComparison.OrdinalIgnoreCase)) optionIndex = 0;
-                    else if (name.Equals("count", global::System.StringComparison.OrdinalIgnoreCase)) optionIndex = 1;
-                    else if (name.Equals("dry-run", global::System.StringComparison.OrdinalIgnoreCase)) optionIndex = 2;
-                    else if (name.Equals("no-dry-run", global::System.StringComparison.OrdinalIgnoreCase)) { optionIndex = 2; negated = true; }
+                    if ((name.Length == 11 && name.Equals("environment", global::System.StringComparison.OrdinalIgnoreCase))) optionIndex = 0;
+                    else if ((name.Length == 5 && name.Equals("count", global::System.StringComparison.OrdinalIgnoreCase))) optionIndex = 1;
+                    else if ((name.Length == 7 && name.Equals("dry-run", global::System.StringComparison.OrdinalIgnoreCase))) optionIndex = 2;
+                    else if (name.Length == 10 && name.Equals("no-dry-run", global::System.StringComparison.OrdinalIgnoreCase)) { optionIndex = 2; negated = true; }
                 }
                 else if (name.Length == 1)
                 {
-                    if (name[0] == 'e') optionIndex = 0;
-                    else if (name[0] == 'c') optionIndex = 1;
+                    switch (name[0])
+                    {
+                        case 'e': optionIndex = 0; break;
+                        case 'c': optionIndex = 1; break;
+                    }
                 }
 
                 switch (optionIndex)
@@ -147,7 +150,7 @@ internal static class __RunesHelaEntry
                 {
                     case 0:
                     {
-                        a0 = token.Value.ToString();
+                        a0 = token.Source ?? token.Value.ToString();
                         continue;
                     }
                     default:

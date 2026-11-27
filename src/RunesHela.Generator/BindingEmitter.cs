@@ -37,12 +37,12 @@ internal sealed class BindingEmitter
         if (model.IsStatic)
         {
             _builder.Append("    private static int BindNode").Append(_nodeIndex)
-                .AppendLine("(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken)");
+                .AppendLine("(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, bool json)");
         }
         else
         {
             _builder.Append("    private static int BindNode").Append(_nodeIndex)
-                .Append("(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, out ")
+                .Append("(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, bool json, out ")
                 .Append(model.TypeFullName).AppendLine(" command)");
         }
 
@@ -54,7 +54,6 @@ internal sealed class BindingEmitter
         }
 
         _builder.Append("        const string commandPath = ").Append(CodeLiteral.String(_node.Path)).AppendLine(";");
-        _builder.AppendLine("        var json = WantsJson(args);");
 
         EmitLocalDeclarations(model);
 
@@ -219,32 +218,36 @@ internal sealed class BindingEmitter
 
             if (option.IsNegatable)
             {
-                _builder.Append(prefix).Append("else if (name.Equals(")
-                    .Append(CodeLiteral.String("no-" + option.LongName))
+                var negatedName = "no-" + option.LongName;
+                _builder.Append(prefix).Append("else if (name.Length == ").Append(negatedName.Length)
+                    .Append(" && name.Equals(").Append(CodeLiteral.String(negatedName))
                     .Append(", global::System.StringComparison.OrdinalIgnoreCase)) { optionIndex = ").Append(i).AppendLine("; negated = true; }");
             }
         }
 
         _builder.AppendLine("                }");
-        _builder.AppendLine("                else if (name.Length == 1)");
-        _builder.AppendLine("                {");
 
-        first = true;
-
-        for (var i = 0; i < model.Options.Count; i++)
+        if (HasShortNames(model))
         {
-            var option = model.Options[i];
+            _builder.AppendLine("                else if (name.Length == 1)");
+            _builder.AppendLine("                {");
+            _builder.AppendLine("                    switch (name[0])");
+            _builder.AppendLine("                    {");
 
-            if (option.ShortName != '\0')
+            for (var i = 0; i < model.Options.Count; i++)
             {
-                _builder.Append("                    ").Append(first ? "if (" : "else if (")
-                    .Append("name[0] == ").Append(CodeLiteral.Char(option.ShortName))
-                    .Append(") optionIndex = ").Append(i).AppendLine(";");
-                first = false;
-            }
-        }
+                var option = model.Options[i];
 
-        _builder.AppendLine("                }");
+                if (option.ShortName != '\0')
+                {
+                    _builder.Append("                        case ").Append(CodeLiteral.Char(option.ShortName))
+                        .Append(": optionIndex = ").Append(i).AppendLine("; break;");
+                }
+            }
+
+            _builder.AppendLine("                    }");
+            _builder.AppendLine("                }");
+        }
         _builder.AppendLine();
         _builder.AppendLine("                switch (optionIndex)");
         _builder.AppendLine("                {");
@@ -413,12 +416,12 @@ internal sealed class BindingEmitter
 
             if (parameter.IsParams || parameter.IsRepeatable)
             {
-                EmitArgumentArrayAppend(parameter, local, indent + "    ", "token.Value");
+                EmitArgumentArrayAppend(parameter, local, indent + "    ");
                 _builder.Append(indent).AppendLine("    continue;");
             }
             else if (parameter.Type.Kind == TypeKind.String)
             {
-                _builder.Append(indent).Append("    ").Append(local).AppendLine(" = token.Value.ToString();");
+                _builder.Append(indent).Append("    ").Append(local).AppendLine(" = token.Source ?? token.Value.ToString();");
 
                 if (parameter.IsRequired)
                 {
@@ -457,8 +460,7 @@ internal sealed class BindingEmitter
             EmitArgumentArrayAppend(
                 model.Parameters[paramsIndex],
                 "a" + paramsIndex,
-                "                        ",
-                "token.Value");
+                "                        ");
             _builder.AppendLine("                        continue;");
             _builder.AppendLine("                    }");
         }
@@ -473,23 +475,22 @@ internal sealed class BindingEmitter
     private void EmitArgumentArrayAppend(
         ParameterModel parameter,
         string local,
-        string indent,
-        string valueExpression)
+        string indent)
     {
         var elementType = parameter.Type.ElementType!;
 
         if (elementType.Kind == TypeKind.String)
         {
             _builder.Append(indent).Append("(").Append(local).Append(" ??= new global::System.Collections.Generic.List<")
-                .Append(NonNullableDisplay(elementType)).Append(">()).Add(").Append(valueExpression).AppendLine(".ToString());");
+                .Append(NonNullableDisplay(elementType)).AppendLine(">()).Add(token.Source ?? token.Value.ToString());");
             return;
         }
 
         var parser = EnsureParser(elementType);
-        _builder.Append(indent).Append("if (!").Append(parser).Append("(").Append(valueExpression).AppendLine(", out var parsed))");
+        _builder.Append(indent).Append("if (!").Append(parser).AppendLine("(token.Value, out var parsed))");
         _builder.Append(indent).Append("    return global::RunesHela.RunesHelaErrors.InvalidArgumentValue(commandPath, ")
-            .Append(CodeLiteral.String(parameter.Name)).Append(", ").Append(valueExpression)
-            .Append(".ToString(), ").Append(CodeLiteral.String(ExpectedValue(elementType))).AppendLine(", json);");
+            .Append(CodeLiteral.String(parameter.Name)).Append(", token.Value.ToString(), ")
+            .Append(CodeLiteral.String(ExpectedValue(elementType))).AppendLine(", json);");
         _builder.Append(indent).Append("(").Append(local).Append(" ??= new global::System.Collections.Generic.List<")
             .Append(NonNullableDisplay(elementType)).AppendLine(">()).Add(parsed);");
     }
@@ -915,7 +916,8 @@ internal sealed class BindingEmitter
     {
         foreach (var member in type.Members)
         {
-            _builder.Append("        if (text.Equals(").Append(CodeLiteral.String(member))
+            _builder.Append("        if (text.Length == ").Append(member.Length)
+                .Append(" && text.Equals(").Append(CodeLiteral.String(member))
                 .Append(", global::System.StringComparison.OrdinalIgnoreCase)) { value = ")
                 .Append(type.DisplayName).Append('.').Append(member).AppendLine("; return true; }");
         }
@@ -941,16 +943,31 @@ internal sealed class BindingEmitter
     private static string MatchExpression(string nameExpression, string longName, EquatableArray<string> aliases)
     {
         var builder = new StringBuilder();
-        builder.Append(nameExpression).Append(".Equals(").Append(CodeLiteral.String(longName))
-            .Append(", global::System.StringComparison.OrdinalIgnoreCase)");
+        builder.Append('(').Append(nameExpression).Append(".Length == ").Append(longName.Length)
+            .Append(" && ").Append(nameExpression).Append(".Equals(").Append(CodeLiteral.String(longName))
+            .Append(", global::System.StringComparison.OrdinalIgnoreCase))");
 
         foreach (var alias in aliases)
         {
-            builder.Append(" || ").Append(nameExpression).Append(".Equals(").Append(CodeLiteral.String(alias))
-                .Append(", global::System.StringComparison.OrdinalIgnoreCase)");
+            builder.Append(" || (").Append(nameExpression).Append(".Length == ").Append(alias.Length)
+                .Append(" && ").Append(nameExpression).Append(".Equals(").Append(CodeLiteral.String(alias))
+                .Append(", global::System.StringComparison.OrdinalIgnoreCase))");
         }
 
         return builder.ToString();
+    }
+
+    private static bool HasShortNames(CommandModel model)
+    {
+        foreach (var option in model.Options)
+        {
+            if (option.ShortName != '\0')
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static string SpanToString(string spanExpression)

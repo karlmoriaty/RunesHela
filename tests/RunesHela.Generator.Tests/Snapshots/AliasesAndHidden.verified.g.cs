@@ -60,7 +60,8 @@ internal static class __RunesHelaEntry
 
     private static ValueTask<int> InvokeNode0Async(ReadOnlySpan<string> args, global::System.IServiceProvider? services, CancellationToken cancellationToken)
     {
-        var bindResult = BindNode0(args, services, cancellationToken, out var command);
+        var json = WantsJson(args);
+        var bindResult = BindNode0(args, services, cancellationToken, json, out var command);
         if (bindResult != 0)
         {
             return new ValueTask<int>(bindResult);
@@ -70,11 +71,10 @@ internal static class __RunesHelaEntry
         return new ValueTask<int>(0);
     }
 
-    private static int BindNode0(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, out global::Demo.HelloCommand command)
+    private static int BindNode0(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, bool json, out global::Demo.HelloCommand command)
     {
         command = null!;
         const string commandPath = "hello";
-        var json = WantsJson(args);
         var reader = new global::RunesHela.Parsing.CommandLineReader(args);
 
         while (reader.TryRead(out var token))
@@ -111,7 +111,8 @@ internal static class __RunesHelaEntry
 
     private static ValueTask<int> InvokeNode1Async(ReadOnlySpan<string> args, global::System.IServiceProvider? services, CancellationToken cancellationToken)
     {
-        var bindResult = BindNode1(args, services, cancellationToken, out var command);
+        var json = WantsJson(args);
+        var bindResult = BindNode1(args, services, cancellationToken, json, out var command);
         if (bindResult != 0)
         {
             return new ValueTask<int>(bindResult);
@@ -120,11 +121,10 @@ internal static class __RunesHelaEntry
         return new ValueTask<int>(command.Run());
     }
 
-    private static int BindNode1(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, out global::Demo.SecretCommand command)
+    private static int BindNode1(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, bool json, out global::Demo.SecretCommand command)
     {
         command = null!;
         const string commandPath = "secret";
-        var json = WantsJson(args);
         var reader = new global::RunesHela.Parsing.CommandLineReader(args);
 
         while (reader.TryRead(out var token))

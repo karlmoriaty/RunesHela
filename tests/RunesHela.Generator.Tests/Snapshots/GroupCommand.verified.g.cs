@@ -80,7 +80,8 @@ internal static class __RunesHelaEntry
 
     private static ValueTask<int> InvokeNode1Async(ReadOnlySpan<string> args, global::System.IServiceProvider? services, CancellationToken cancellationToken)
     {
-        var bindResult = BindNode1(args, services, cancellationToken, out var command);
+        var json = WantsJson(args);
+        var bindResult = BindNode1(args, services, cancellationToken, json, out var command);
         if (bindResult != 0)
         {
             return new ValueTask<int>(bindResult);
@@ -90,11 +91,10 @@ internal static class __RunesHelaEntry
         return new ValueTask<int>(0);
     }
 
-    private static int BindNode1(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, out global::Demo.RemoteCommand.AddCommand command)
+    private static int BindNode1(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, bool json, out global::Demo.RemoteCommand.AddCommand command)
     {
         command = null!;
         const string commandPath = "remote add";
-        var json = WantsJson(args);
         var reader = new global::RunesHela.Parsing.CommandLineReader(args);
 
         while (reader.TryRead(out var token))

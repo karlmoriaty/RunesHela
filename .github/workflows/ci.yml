@@ -32,7 +32,10 @@ jobs:
       - name: Test integration
         run: dotnet test tests/RunesHela.Integration.Tests/RunesHela.Integration.Tests.csproj -c Release --no-build
 
-  aot:
+      - name: Test performance budgets
+        run: dotnet test tests/RunesHela.Performance.Tests/RunesHela.Performance.Tests.csproj -c Release --no-build
+
+  perf:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -43,23 +46,63 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      - name: Performance budgets
+        run: dotnet test tests/RunesHela.Performance.Tests/RunesHela.Performance.Tests.csproj -c Release
+
+      - name: Micro benchmarks
+        run: dotnet run --project benchmarks/RunesHela.Benchmarks/RunesHela.Benchmarks.csproj -c Release -- --filter "*" --job short --exporters json
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmarks
+          path: BenchmarkDotNet.Artifacts/results/*.json
+          if-no-files-found: error
+
+  aot:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: linux-x64
+            os: ubuntu-latest
+          - rid: win-x64
+            os: windows-latest
+          - rid: osx-arm64
+            os: macos-14
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
       - name: Install Native AOT prerequisites
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y clang zlib1g-dev
 
       - name: Publish Native AOT
+        shell: bash
         run: |
-          dotnet publish samples/AotCli/AotCli.csproj -c Release -r linux-x64 -o artifacts/aot/linux-x64
-          dotnet publish samples/EmptyAot/EmptyAot.csproj -c Release -r linux-x64 -o artifacts/aot/linux-x64
+          dotnet publish samples/AotCli/AotCli.csproj -c Release -r ${{ matrix.rid }} -o artifacts/aot/${{ matrix.rid }}
+          dotnet publish samples/EmptyAot/EmptyAot.csproj -c Release -r ${{ matrix.rid }} -o artifacts/aot/${{ matrix.rid }}
 
       - name: Smoke test AOT binaries
+        shell: bash
         run: |
-          ./artifacts/aot/linux-x64/AotCli --help
-          ./artifacts/aot/linux-x64/AotCli greet Ada -t Hi
-          ./artifacts/aot/linux-x64/EmptyAot
+          exe=""
+          if [ "${{ runner.os }}" = "Windows" ]; then exe=".exe"; fi
+          ./artifacts/aot/${{ matrix.rid }}/AotCli$exe --help
+          ./artifacts/aot/${{ matrix.rid }}/AotCli$exe greet Ada -t Hi
 
-      - name: Measure AOT startup
+      - name: Measure AOT startup and size
+        if: matrix.rid == 'linux-x64'
+        shell: bash
         run: |
           python3 - <<'PY'
           import os
@@ -87,5 +130,34 @@ jobs:
           print(f"Size EmptyAot={empty_size} bytes AotCli={app_size} bytes Delta={app_size - empty_size} bytes")
           PY
 
-      - name: Record AOT binary size
-        run: stat -c '%n %s bytes' artifacts/aot/linux-x64/AotCli artifacts/aot/linux-x64/EmptyAot
+  trimmed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish trimmed single-file
+        run: |
+          dotnet publish samples/AotCli/AotCli.csproj -c Release -r linux-x64 \
+            -p:PublishAot=false -p:PublishTrimmed=true -p:PublishSingleFile=true -p:SelfContained=true \
+            -o artifacts/trim/linux-x64
+
+      - name: Smoke test trimmed single-file
+        run: ./artifacts/trim/linux-x64/AotCli --help
+
+      - name: Publish ReadyToRun
+        run: |
+          dotnet publish samples/AotCli/AotCli.csproj -c Release -r linux-x64 \
+            -p:PublishAot=false -p:PublishReadyToRun=true -p:SelfContained=false \
+            -o artifacts/r2r/linux-x64
+
+      - name: Smoke test ReadyToRun
+        run: ./artifacts/r2r/linux-x64/AotCli --help
+
+      - name: Record artifact sizes
+        run: stat -c '%n %s bytes' artifacts/trim/linux-x64/AotCli artifacts/r2r/linux-x64/AotCli

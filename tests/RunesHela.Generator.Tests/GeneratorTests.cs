@@ -732,7 +732,7 @@ public sealed class GeneratorTests
         return new GeneratorResult(generatedSource, diagnostics, compileErrors);
     }
 
-    private static CSharpCompilation CreateCompilation(string source, CSharpParseOptions parseOptions)
+    internal static CSharpCompilation CreateCompilation(string source, CSharpParseOptions parseOptions)
     {
         return CSharpCompilation.Create(
             "TestAssembly",

@@ -25,13 +25,15 @@ public readonly ref struct CommandLineToken
         ReadOnlySpan<char> name,
         ReadOnlySpan<char> value,
         bool hasValue,
-        int prefixLength)
+        int prefixLength,
+        string? source)
     {
         Kind = kind;
         Name = name;
         Value = value;
         HasValue = hasValue;
         PrefixLength = prefixLength;
+        Source = source;
     }
 
     /// <summary>Gets the token kind.</summary>
@@ -49,6 +51,9 @@ public readonly ref struct CommandLineToken
     /// <summary>Gets the number of leading dashes: 1 for <c>-n</c>, 2 for <c>--name</c>, and 0 for positionals.</summary>
     public int PrefixLength { get; }
 
+    /// <summary>Gets the original argument string for positional tokens, or <see langword="null"/> for options.</summary>
+    public string? Source { get; }
+
     /// <summary>Creates an option token.</summary>
     public static CommandLineToken Option(
         ReadOnlySpan<char> name,
@@ -56,18 +61,18 @@ public readonly ref struct CommandLineToken
         bool hasValue = false,
         int prefixLength = 2)
     {
-        return new CommandLineToken(CommandLineTokenKind.Option, name, value, hasValue, prefixLength);
+        return new CommandLineToken(CommandLineTokenKind.Option, name, value, hasValue, prefixLength, null);
     }
 
     /// <summary>Creates a positional token.</summary>
-    public static CommandLineToken Positional(ReadOnlySpan<char> value)
+    public static CommandLineToken Positional(ReadOnlySpan<char> value, string? source = null)
     {
-        return new CommandLineToken(CommandLineTokenKind.Positional, default, value, false, 0);
+        return new CommandLineToken(CommandLineTokenKind.Positional, default, value, false, 0, source);
     }
 
     /// <summary>Creates the <c>--</c> terminator token.</summary>
     public static CommandLineToken Terminator()
     {
-        return new CommandLineToken(CommandLineTokenKind.Terminator, default, default, false, 0);
+        return new CommandLineToken(CommandLineTokenKind.Terminator, default, default, false, 0, null);
     }
 }

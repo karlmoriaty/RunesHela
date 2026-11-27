@@ -46,7 +46,7 @@ public ref struct CommandLineReader
 
             if (_afterTerminator)
             {
-                token = CommandLineToken.Positional(arg.AsSpan());
+                token = CommandLineToken.Positional(arg.AsSpan(), arg);
                 return true;
             }
 
@@ -68,7 +68,7 @@ public ref struct CommandLineReader
                 // Negative numbers are positional values, not options.
                 if (char.IsAsciiDigit(arg[1]) || arg[1] == '.')
                 {
-                    token = CommandLineToken.Positional(arg.AsSpan());
+                    token = CommandLineToken.Positional(arg.AsSpan(), arg);
                     return true;
                 }
 
@@ -76,7 +76,7 @@ public ref struct CommandLineReader
                 return true;
             }
 
-            token = CommandLineToken.Positional(arg.AsSpan());
+            token = CommandLineToken.Positional(arg.AsSpan(), arg);
             return true;
         }
 

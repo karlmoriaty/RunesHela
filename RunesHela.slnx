@@ -14,6 +14,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/RunesHela.Generator.Tests/RunesHela.Generator.Tests.csproj" />
     <Project Path="tests/RunesHela.Integration.Tests/RunesHela.Integration.Tests.csproj" />
+    <Project Path="tests/RunesHela.Performance.Tests/RunesHela.Performance.Tests.csproj" />
     <Project Path="tests/RunesHela.Tests/RunesHela.Tests.csproj" />
   </Folder>
 </Solution>
