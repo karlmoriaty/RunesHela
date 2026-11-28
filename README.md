@@ -109,7 +109,7 @@ app greet --help --json
 
 - **优先级**：CLI > ENV > JSON 配置文件 > 属性默认值；CLI 显式空字符串也覆盖其他来源。
 - **配置键**：默认 `command.path.option-name`（如 `deploy.environment`），可用 `[Option(Config = "auth.token")]` 覆盖；重复键报 RHL016，非法键报 RHL040。
-- **JSON 解析**：`System.Text.Json.JsonDocument`，支持点路径嵌套、标量数组与 `"a,b"` 逗号串，零反射、AOT 安全。
+- **JSON 解析**：内置最小 JSON 解析/写入器，支持点路径嵌套、标量数组与 `"a,b"` 逗号串，零反射、零第三方依赖、AOT 安全。
 - **显式配置源**：`--config <PATH>`（可放在命令前后）与 `RHL_CONFIG`；显式文件缺失/非法 → 退出码 3（`RHL_CONFIG_NOT_FOUND` / `RHL_CONFIG_INVALID` / `RHL_CONFIG_INVALID_VALUE`），错误信息不含配置值。
 - **隐式发现（opt-in）**：`[assembly: RunesHelaConfigFile]` 后按当前目录 `appsettings.json` → `~/.config/<app>/appsettings.json` 查找；未启用时保持绑定热路径零 IO、零分配（AC-04）。
 - **ENV 约定**：未显式设置 `Env` 时按 `APP_COMMAND_OPTION` 生成（如 `AOTCLI_GREET_TEXT`）；布尔接受 `1/0`、`true/false`、`yes/no`、`on/off`。
@@ -134,7 +134,7 @@ app greet --help --json
 - **供应链**：SourceLink + 确定性构建；SPDX 2.3 SBOM（`build/generate-sbom.py`）；包内容校验与 NuGet 消费端冒烟测试。
 - **治理**：Apache-2.0 LICENSE、NOTICE、SECURITY.md、CODEOWNERS、CONTRIBUTING.md、DCO 工作流；`release` 工作流使用 NuGet OIDC 可信发布与 `release` 环境审批。
 - **文档**：Quickstart、迁移指南、发布与回滚流程、错误码、M0–M8 基准报告。
-- **AOT 优化**：运行时移除 `System.Text.Json`，配置与 MCP 改用内置最小 JSON 解析/写入器；体积增量见 M8 报告。
+- **AOT 优化**：运行时移除 `System.Text.Json`，配置与 MCP 改用内置最小 JSON 解析/写入器；体积增量 432.7 KB（较 M7 −172.3 KB），启动增量 0.11 ms；仍高于 150 KB 阈值，V1.1 以 minimal profile 继续收敛。
 
 ---
 
