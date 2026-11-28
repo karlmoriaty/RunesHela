@@ -125,6 +125,7 @@ app greet --help --json
 - **stdio server**：`app mcp --stdio` 逐行 JSON-RPC，支持 `initialize`、`notifications/initialized`、`ping`、`tools/list`、`tools/call`；单线程顺序执行。
 - **结果契约**：stdout/stderr 作为 `content` 文本项返回，`isError` 对应非零退出码，`structuredContent.exitCode` 提供机器可读状态；CLI 错误（缺失必填、破坏性未确认）原样映射为工具错误。
 - **零依赖**：JSON-RPC 与参数映射使用 BCL `JsonDocument` + 手写 JSON 输出，无第三方 MCP SDK。
+- **AOT**：三平台冒烟新增 `mcp --manifest`；体积增量 605.0 KB（较 M6 +44.3 KB），启动增量 0.04 ms，体积仍为 M8 技术债。
 
 ---
 
