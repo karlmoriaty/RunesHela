@@ -89,41 +89,7 @@ public static class RunesHelaApp
         return version is null ? "0.0.0" : version.ToString(3);
     }
 
-    private static int RunProtected(string[] args, IServiceProvider? services, CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(args);
-
-        if (s_entry is null)
-        {
-            return WriteMissingEntry();
-        }
-
-        try
-        {
-            var task = s_entry(args, services, cancellationToken);
-
-            if (task.IsCompletedSuccessfully)
-            {
-                return task.Result;
-            }
-
-            return task.AsTask().GetAwaiter().GetResult();
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            return RunesHelaExitCode.Interrupted;
-        }
-        catch (IOException)
-        {
-            return RunesHelaExitCode.BrokenPipe;
-        }
-        catch (Exception exception)
-        {
-            return WriteUnexpected(exception, args);
-        }
-    }
-
-    private static async ValueTask<int> RunProtectedAsync(
+    private static ValueTask<int> RunProtectedAsync(
         string[] args,
         IServiceProvider? services,
         CancellationToken cancellationToken)
@@ -132,25 +98,34 @@ public static class RunesHelaApp
 
         if (s_entry is null)
         {
-            return WriteMissingEntry();
+            return new ValueTask<int>(WriteMissingEntry());
         }
 
         try
         {
-            return await s_entry(args, services, cancellationToken).ConfigureAwait(false);
+            return s_entry(args, services, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            return RunesHelaExitCode.Interrupted;
+            return new ValueTask<int>(RunesHelaExitCode.Interrupted);
         }
         catch (IOException)
         {
-            return RunesHelaExitCode.BrokenPipe;
+            return new ValueTask<int>(RunesHelaExitCode.BrokenPipe);
         }
         catch (Exception exception)
         {
-            return WriteUnexpected(exception, args);
+            return new ValueTask<int>(WriteUnexpected(exception, args));
         }
+    }
+
+    private static int RunProtected(string[] args, IServiceProvider? services, CancellationToken cancellationToken)
+    {
+        var task = RunProtectedAsync(args, services, cancellationToken);
+
+        return task.IsCompletedSuccessfully
+            ? task.Result
+            : task.AsTask().GetAwaiter().GetResult();
     }
 
     private static int WriteMissingEntry()
