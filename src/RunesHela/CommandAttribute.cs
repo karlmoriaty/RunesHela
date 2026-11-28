@@ -46,4 +46,9 @@ public sealed class CommandAttribute : Attribute
     /// Gets or sets a value indicating whether the command performs a destructive operation.
     /// </summary>
     public bool IsDestructive { get; set; }
+
+    /// <summary>
+    /// Gets or sets the filter types wrapped around the handler, in declaration order.
+    /// </summary>
+    public Type[] Filters { get; set; } = Array.Empty<Type>();
 }

@@ -295,6 +295,30 @@ internal static class Diagnostics
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
+    public static readonly DiagnosticDescriptor InvalidFilterType = new(
+        id: "RHL037",
+        title: "Invalid filter type",
+        messageFormat: "Filter '{0}' on command '{1}' is not a supported class",
+        category: "RunesHela",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor FilterContract = new(
+        id: "RHL038",
+        title: "Filter does not implement IRunesHelaFilter",
+        messageFormat: "Filter '{0}' on command '{1}' must implement RunesHela.IRunesHelaFilter",
+        category: "RunesHela",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor FilterConstructor = new(
+        id: "RHL039",
+        title: "Filter has no usable constructor",
+        messageFormat: "Filter '{0}' on command '{1}' must have a public or internal parameterless constructor",
+        category: "RunesHela",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
     public static readonly DiagnosticDescriptor GeneratorError = new(
         id: "RHL999",
         title: "Generator error",
@@ -340,6 +364,9 @@ internal static class Diagnostics
         InvalidArgumentPosition,
         InvalidValidation,
         ConflictingBindingAttributes,
+        InvalidFilterType,
+        FilterContract,
+        FilterConstructor,
         GeneratorError);
 
     private static readonly Dictionary<string, DiagnosticDescriptor> ById = CreateById();

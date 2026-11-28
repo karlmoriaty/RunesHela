@@ -699,6 +699,90 @@ public sealed class GeneratorTests
         Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL021");
     }
 
+    [Fact]
+    public void ReportsInvalidFilterType()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("bad", Description = "Bad filter.", Filters = new[] { typeof(int) })]
+            public sealed class BadFilterCommand
+            {
+                public void Run()
+                {
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL037");
+    }
+
+    [Fact]
+    public void ReportsFilterContractViolation()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            public sealed class NotAFilter
+            {
+            }
+
+            [Command("bad", Description = "Bad filter.", Filters = new[] { typeof(NotAFilter) })]
+            public sealed class BadFilterCommand
+            {
+                public void Run()
+                {
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL038");
+    }
+
+    [Fact]
+    public void ReportsFilterWithoutParameterlessConstructor()
+    {
+        const string source = """
+            using System;
+            using System.Threading.Tasks;
+            using RunesHela;
+
+            namespace Demo;
+
+            public sealed class NeedsDependency : IRunesHelaFilter
+            {
+                public NeedsDependency(string dependency)
+                {
+                }
+
+                public ValueTask<int> InvokeAsync(CommandContext context, Func<CommandContext, ValueTask<int>> next)
+                {
+                    return next(context);
+                }
+            }
+
+            [Command("bad", Description = "Bad filter.", Filters = new[] { typeof(NeedsDependency) })]
+            public sealed class BadFilterCommand
+            {
+                public void Run()
+                {
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL039");
+    }
+
     internal static GeneratorResult RunGenerator(string source)
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);

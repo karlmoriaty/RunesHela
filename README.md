@@ -1,8 +1,8 @@
 # RunesHela · 设计文档集
 
 > **项目名称**：RunesHela（已选定，2026-11-26；见 [06 决策记录](./docs/06-决策记录.md) D-06）
-> **状态**：**M3 已完成（2026-11-27）**，下一步 M4（Agent 契约）
-> **日期**：2026-11-27
+> **状态**：**M4 已完成（2026-11-28）**，下一步 M5（补全、Man、文档）
+> **日期**：2026-11-28
 
 ---
 
@@ -87,6 +87,16 @@ app greet --help --json
 - **AOT 矩阵**：linux-x64 / win-x64 / osx-arm64 三平台 AOT + Trim/SingleFile + ReadyToRun 冒烟全部通过；启动增量 0.14 ms。
 - **DI 验证**：缺失服务提供器/缺失注册分别给出稳定错误码与退出码，不挂起。
 
+### M4 已具备的能力（Agent 契约）
+
+- **非 TTY 自动模式**：帮助恒无 ANSI；错误仅在交互式终端着色（`NO_COLOR`/`TERM=dumb`/重定向自动关闭）；数据走 stdout、诊断走 stderr。
+- **全局选项前置**：`--json`、`--plain`、`--no-color`、`--quiet`、`--verbose`、`--no-input`、`--yes`、`--format <text|plain|json>` 可在命令前解析，未知格式返回退出码 2。
+- **结构化错误**：`code`/`message`/`hint`/`nextSteps`/`docsUrl`/`exitCode`，未知命令与选项给出 did-you-mean 建议。
+- **破坏性守卫**：`[Command(IsDestructive = true)]`；非 TTY 或缺 `--yes` 立即失败（退出码 2），TTY 下交互确认，`--no-input` 禁止提示。
+- **退出码矩阵**：0/1/2/3/4/5/6/7/130/141，`RunesHelaExitCode` 常量；取消 → 130，EPIPE → 141。
+- **自描述**：`describe` 输出全树 JSON，与 `--help --json` 同源（选项/默认值/ENV/退出码）。
+- **过滤器链**：`[Command(Filters = new[] { typeof(AuditFilter) })]`，按声明顺序包裹 handler，`CommandContext` 提供路径/服务/取消令牌；生成期校验契约与构造（RHL037–RHL039）。
+
 ---
 
 ## 文档地图
@@ -103,7 +113,8 @@ app greet --help --json
 | 07 | [M0 基准报告](./docs/benchmarks/M0-基准报告.md) | 解析/帮助/错误/路由/AOT 实测与预算对照 | 开发/评审 | ✅ M0 通过 |
 | 08 | [M2 基准报告](./docs/benchmarks/M2-基准报告.md) | M2 回归：帮助 0 B、错误 304 B、集成测试 103 项 | 开发/评审 | ✅ M2 通过 |
 | 09 | [M3 基准报告](./docs/benchmarks/M3-基准报告.md) | 热路径 0 B、性能门禁、生成器 no-op、AOT/Trim/R2R 矩阵 | 开发/评审 | ✅ M3 通过 |
-| 10 | [错误码与诊断](./docs/errors.md) | 运行时 `RHL_*` 错误码、`RHLxxx` 诊断码、退出码 | 开发/使用 | ✅ 随 M2 更新 |
+| 10 | [M4 基准报告](./docs/benchmarks/M4-基准报告.md) | Agent 契约：非 TTY、错误建议、破坏性守卫、退出码、EPIPE、过滤器 | 开发/评审 | ✅ M4 通过 |
+| 11 | [错误码与诊断](./docs/errors.md) | 运行时 `RHL_*` 错误码、`RHLxxx` 诊断码、退出码矩阵 | 开发/使用 | ✅ 随 M4 更新 |
 
 ---
 
@@ -166,7 +177,7 @@ app greet --help --json
 
 ## 边界声明
 
-- 当前已完成 **M3**（2026-11-27）：热路径优化与零分配门禁、生成器 no-op 基准、性能门禁、AOT/Trim/SingleFile/R2R 矩阵、DI 验证；下一步 M4。
+- 当前已完成 **M4**（2026-11-28）：非 TTY 自动模式、结构化错误与 did-you-mean、破坏性守卫、退出码矩阵、EPIPE、`describe`、过滤器链；下一步 M5。
 - 以上决议已按你的选择写入文档；项目已按决议进入开发。
 
 ---

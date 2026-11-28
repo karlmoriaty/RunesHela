@@ -292,6 +292,7 @@ internal sealed class CommandModel : IEquatable<CommandModel>
         bool isHidden,
         bool isDestructive,
         EquatableArray<string> aliases,
+        EquatableArray<string> filters,
         EquatableArray<OptionModel> options,
         EquatableArray<ParameterModel> parameters,
         EquatableArray<string> examples,
@@ -310,6 +311,7 @@ internal sealed class CommandModel : IEquatable<CommandModel>
         IsHidden = isHidden;
         IsDestructive = isDestructive;
         Aliases = aliases;
+        Filters = filters;
         Options = options;
         Parameters = parameters;
         Examples = examples;
@@ -337,6 +339,8 @@ internal sealed class CommandModel : IEquatable<CommandModel>
     public bool IsDestructive { get; }
 
     public EquatableArray<string> Aliases { get; }
+
+    public EquatableArray<string> Filters { get; }
 
     public EquatableArray<OptionModel> Options { get; }
 
@@ -366,6 +370,7 @@ internal sealed class CommandModel : IEquatable<CommandModel>
                IsHidden == other.IsHidden &&
                IsDestructive == other.IsDestructive &&
                Aliases == other.Aliases &&
+               Filters == other.Filters &&
                Options == other.Options &&
                Parameters == other.Parameters &&
                Examples == other.Examples &&
@@ -394,6 +399,7 @@ internal sealed class CommandModel : IEquatable<CommandModel>
             hash = (hash * 397) ^ (IsHidden ? 1 : 0);
             hash = (hash * 397) ^ (IsDestructive ? 1 : 0);
             hash = (hash * 397) ^ Aliases.GetHashCode();
+            hash = (hash * 397) ^ Filters.GetHashCode();
             hash = (hash * 397) ^ Options.GetHashCode();
             hash = (hash * 397) ^ Parameters.GetHashCode();
             hash = (hash * 397) ^ Examples.GetHashCode();

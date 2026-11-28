@@ -16,9 +16,13 @@ RunesHela uses two code families:
 <a id="rhl_usage_missing_required"></a>
 <a id="rhl_usage_unexpected_argument"></a>
 <a id="rhl_usage_validation_failed"></a>
+<a id="rhl_usage_confirmation_required"></a>
+<a id="rhl_usage_aborted"></a>
+<a id="rhl_usage_unsupported_format"></a>
 <a id="rhl_di_services_missing"></a>
 <a id="rhl_di_service_missing"></a>
 <a id="rhl_internal_not_implemented"></a>
+<a id="rhl_internal_unexpected"></a>
 
 | Code | Exit code | Meaning | Typical cause |
 |---|---:|---|---|
@@ -29,11 +33,32 @@ RunesHela uses two code families:
 | `RHL_USAGE_MISSING_REQUIRED` | 2 | Required option or argument was not supplied | Missing `--environment` |
 | `RHL_USAGE_UNEXPECTED_ARGUMENT` | 2 | Too many positional arguments | Extra token after the last argument |
 | `RHL_USAGE_VALIDATION_FAILED` | 2 | Value failed `Range`, `Regex`, or `Length` | `--count 99` with `[Range(1, 10)]` |
+| `RHL_USAGE_CONFIRMATION_REQUIRED` | 2 | Destructive command was not confirmed | Non-interactive run without `--yes` |
+| `RHL_USAGE_ABORTED` | 2 | Interactive confirmation was declined | Answering `n` at the prompt |
+| `RHL_USAGE_UNSUPPORTED_FORMAT` | 2 | Unknown `--format` value | `--format yaml` |
 | `RHL_DI_SERVICES_MISSING` | 1 | Command needs constructor dependencies but no provider was supplied | `RunesHelaApp.Run(args)` for a DI command |
 | `RHL_DI_SERVICE_MISSING` | 1 | Constructor dependency could not be resolved | Service not registered |
 | `RHL_INTERNAL_NOT_IMPLEMENTED` | 1 | Command declares no handler | `[Command]` class without `Run` |
+| `RHL_INTERNAL_UNEXPECTED` | 1 | Unhandled exception escaped the command | Handler threw |
 
-Precedence is `CLI > environment variable > property initializer`. Missing required values produce exit code `2`; unresolved dependencies and missing handlers produce `1`.
+Precedence is `CLI > environment variable > property initializer`. Usage errors use exit code `2`; dependency and internal errors use `1`. Unknown names include a did-you-mean hint when a close candidate exists.
+
+## Exit code matrix
+
+| Code | Constant | Meaning |
+|---:|---|---|
+| 0 | `RunesHelaExitCode.Success` | Success |
+| 1 | `RunesHelaExitCode.Failure` | General failure or unhandled exception |
+| 2 | `RunesHelaExitCode.Usage` | Usage error, validation failure, missing confirmation |
+| 3 | `RunesHelaExitCode.Configuration` | Configuration error |
+| 4 | `RunesHelaExitCode.NotFound` | Resource not found |
+| 5 | `RunesHelaExitCode.Permission` | Authentication or authorization failure |
+| 6 | `RunesHelaExitCode.Conflict` | State conflict |
+| 7 | `RunesHelaExitCode.Timeout` | Timeout |
+| 130 | `RunesHelaExitCode.Interrupted` | Cancelled by SIGINT (`128 + 2`) |
+| 141 | `RunesHelaExitCode.BrokenPipe` | Output pipe closed (`128 + SIGPIPE`) |
+
+`RunesHelaApp` maps a cancelled token to `130` and any `IOException` escaping the entry point to `141`. Both are written without an error envelope because the diagnostic channel may also be closed.
 
 ## Generator diagnostics
 
@@ -75,6 +100,9 @@ Precedence is `CLI > environment variable > property initializer`. Missing requi
 | RHL034 | Error | Invalid argument position |
 | RHL035 | Error | Validation attribute is not valid for the member type |
 | RHL036 | Error | Member is both an option and an argument |
+| RHL037 | Error | Invalid filter type (not a class, generic, or abstract) |
+| RHL038 | Error | Filter does not implement `RunesHela.IRunesHelaFilter` |
+| RHL039 | Error | Filter has no accessible parameterless constructor |
 | RHL999 | Warning | Generator failed unexpectedly |
 
 Diagnostics are reported with a source location, a stable code, and actionable text. An error skips code generation for the affected command instead of producing cascading failures.

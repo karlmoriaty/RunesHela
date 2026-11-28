@@ -24,6 +24,16 @@ public interface IConsole
     /// Gets a value indicating whether ANSI escape sequences may be written to the error stream.
     /// </summary>
     bool IsAnsiSupported => false;
+
+    /// <summary>
+    /// Gets a value indicating whether standard input is redirected.
+    /// </summary>
+    bool IsInputRedirected => true;
+
+    /// <summary>
+    /// Gets the reader used for interactive prompts.
+    /// </summary>
+    TextReader In => TextReader.Null;
 }
 
 /// <summary>
@@ -51,6 +61,10 @@ public static class RunesHelaConsole
         public TextWriter Error => Console.Error;
 
         public bool IsOutputRedirected => Console.IsOutputRedirected;
+
+        public bool IsInputRedirected => Console.IsInputRedirected;
+
+        public TextReader In => Console.In;
 
         public bool IsAnsiSupported { get; } = DetectAnsiSupport();
 

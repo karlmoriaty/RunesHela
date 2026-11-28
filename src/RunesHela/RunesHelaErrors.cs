@@ -17,6 +17,10 @@ public static class RunesHelaErrors
     private const string ServicesMissingDocs = DocsBase + "rhl_di_services_missing";
     private const string ServiceMissingDocs = DocsBase + "rhl_di_service_missing";
     private const string NotImplementedDocs = DocsBase + "rhl_internal_not_implemented";
+    private const string ConfirmationRequiredDocs = DocsBase + "rhl_usage_confirmation_required";
+    private const string AbortedDocs = DocsBase + "rhl_usage_aborted";
+    private const string UnsupportedFormatDocs = DocsBase + "rhl_usage_unsupported_format";
+    private const string UnexpectedErrorDocs = DocsBase + "rhl_internal_unexpected";
 
     /// <summary>
     /// Writes an unknown command error.
@@ -24,15 +28,19 @@ public static class RunesHelaErrors
     /// <param name="command">The unrecognized command name.</param>
     /// <param name="appName">The application name used in guidance.</param>
     /// <param name="json">Whether to write JSON.</param>
+    /// <param name="candidates">Known command names used for a did-you-mean hint.</param>
     /// <returns>The exit code.</returns>
-    public static int UnknownCommand(string command, string appName, bool json)
+    public static int UnknownCommand(string command, string appName, bool json, string[]? candidates = null)
     {
+        var suggestion = DidYouMean.Nearest(command, candidates);
+
         return Write(
             new RunesHelaError
             {
                 Code = RunesHelaErrorCodes.UnknownCommand,
                 Message = "Unknown command '" + command + "'.",
-                ExitCode = 2,
+                Hint = suggestion is null ? null : "Did you mean '" + suggestion + "'?",
+                ExitCode = RunesHelaExitCode.Usage,
                 DocsUrl = DocsUrl(RunesHelaErrorCodes.UnknownCommand),
                 NextSteps = new[] { "Run '" + appName + " --help' to list commands." },
             },
@@ -45,15 +53,23 @@ public static class RunesHelaErrors
     /// <param name="commandPath">The parent command path.</param>
     /// <param name="command">The unrecognized subcommand name.</param>
     /// <param name="json">Whether to write JSON.</param>
+    /// <param name="candidates">Known subcommand names used for a did-you-mean hint.</param>
     /// <returns>The exit code.</returns>
-    public static int UnknownSubcommand(string commandPath, string command, bool json)
+    public static int UnknownSubcommand(
+        string commandPath,
+        string command,
+        bool json,
+        string[]? candidates = null)
     {
+        var suggestion = DidYouMean.Nearest(command, candidates);
+
         return Write(
             new RunesHelaError
             {
                 Code = RunesHelaErrorCodes.UnknownCommand,
                 Message = "Unknown command '" + commandPath + " " + command + "'.",
-                ExitCode = 2,
+                Hint = suggestion is null ? null : "Did you mean '" + commandPath + " " + suggestion + "'?",
+                ExitCode = RunesHelaExitCode.Usage,
                 CommandPath = commandPath,
                 DocsUrl = DocsUrl(RunesHelaErrorCodes.UnknownCommand),
                 NextSteps = new[] { "Run '" + commandPath + " --help' to list subcommands." },
@@ -67,15 +83,23 @@ public static class RunesHelaErrors
     /// <param name="commandPath">The command path, or an empty string for the application root.</param>
     /// <param name="optionName">The unrecognized option name without dashes.</param>
     /// <param name="json">Whether to write JSON.</param>
+    /// <param name="candidates">Known option names used for a did-you-mean hint.</param>
     /// <returns>The exit code.</returns>
-    public static int UnknownOption(string commandPath, string optionName, bool json)
+    public static int UnknownOption(
+        string commandPath,
+        string optionName,
+        bool json,
+        string[]? candidates = null)
     {
+        var suggestion = DidYouMean.Nearest(optionName, candidates);
+
         return Write(
             new RunesHelaError
             {
                 Code = RunesHelaErrorCodes.UnknownOption,
                 Message = "Unknown option '--" + optionName + "'.",
-                ExitCode = 2,
+                Hint = suggestion is null ? null : "Did you mean '--" + suggestion + "'?",
+                ExitCode = RunesHelaExitCode.Usage,
                 CommandPath = commandPath,
                 DocsUrl = DocsUrl(RunesHelaErrorCodes.UnknownOption),
                 NextSteps = new[] { HelpStep(commandPath), "Use '--' to pass the remaining arguments through." },
@@ -97,7 +121,7 @@ public static class RunesHelaErrors
             {
                 Code = RunesHelaErrorCodes.MissingValue,
                 Message = "Option '--" + optionName + "' requires a value.",
-                ExitCode = 2,
+                ExitCode = RunesHelaExitCode.Usage,
                 CommandPath = commandPath,
                 DocsUrl = DocsUrl(RunesHelaErrorCodes.MissingValue),
                 NextSteps = new[] { "Pass the value as '--" + optionName + " <VALUE>'.", HelpStep(commandPath) },
@@ -124,7 +148,7 @@ public static class RunesHelaErrors
                 Code = RunesHelaErrorCodes.InvalidValue,
                 Message = "Invalid value " + display + " for option '--" + optionName + "'.",
                 Hint = "Expected " + expected + ".",
-                ExitCode = 2,
+                ExitCode = RunesHelaExitCode.Usage,
                 CommandPath = commandPath,
                 DocsUrl = DocsUrl(RunesHelaErrorCodes.InvalidValue),
                 NextSteps = new[] { HelpStep(commandPath) },
@@ -156,7 +180,7 @@ public static class RunesHelaErrors
                 Code = RunesHelaErrorCodes.InvalidValue,
                 Message = "Invalid value " + display + " for argument '<" + argumentName + ">'.",
                 Hint = "Expected " + expected + ".",
-                ExitCode = 2,
+                ExitCode = RunesHelaExitCode.Usage,
                 CommandPath = commandPath,
                 DocsUrl = DocsUrl(RunesHelaErrorCodes.InvalidValue),
                 NextSteps = new[] { HelpStep(commandPath) },
@@ -180,7 +204,7 @@ public static class RunesHelaErrors
                 Code = RunesHelaErrorCodes.MissingRequired,
                 Message = "Missing required option '--" + optionName + "'.",
                 Hint = envVar is null ? null : "Set '" + envVar + "' or pass the option explicitly.",
-                ExitCode = 2,
+                ExitCode = RunesHelaExitCode.Usage,
                 CommandPath = commandPath,
                 DocsUrl = DocsUrl(RunesHelaErrorCodes.MissingRequired),
                 NextSteps = new[] { "Pass '--" + optionName + " <VALUE>'.", HelpStep(commandPath) },
@@ -202,7 +226,7 @@ public static class RunesHelaErrors
             {
                 Code = RunesHelaErrorCodes.MissingRequired,
                 Message = "Missing required argument '<" + argumentName + ">'.",
-                ExitCode = 2,
+                ExitCode = RunesHelaExitCode.Usage,
                 CommandPath = commandPath,
                 DocsUrl = DocsUrl(RunesHelaErrorCodes.MissingRequired),
                 NextSteps = new[] { HelpStep(commandPath) },
@@ -224,7 +248,7 @@ public static class RunesHelaErrors
             {
                 Code = RunesHelaErrorCodes.UnexpectedArgument,
                 Message = "Unexpected argument '" + value + "'.",
-                ExitCode = 2,
+                ExitCode = RunesHelaExitCode.Usage,
                 CommandPath = commandPath,
                 DocsUrl = DocsUrl(RunesHelaErrorCodes.UnexpectedArgument),
                 NextSteps = new[] { HelpStep(commandPath) },
@@ -248,7 +272,7 @@ public static class RunesHelaErrors
                 Code = RunesHelaErrorCodes.ValidationFailed,
                 Message = "Validation failed for '" + name + "'.",
                 Hint = message,
-                ExitCode = 2,
+                ExitCode = RunesHelaExitCode.Usage,
                 CommandPath = commandPath,
                 DocsUrl = DocsUrl(RunesHelaErrorCodes.ValidationFailed),
                 NextSteps = new[] { HelpStep(commandPath) },
@@ -270,7 +294,7 @@ public static class RunesHelaErrors
                 Code = RunesHelaErrorCodes.ServicesMissing,
                 Message = "Command '" + commandPath + "' requires a service provider.",
                 Hint = "Call RunesHelaApp.RunAsync(args, services) to supply dependencies.",
-                ExitCode = 1,
+                ExitCode = RunesHelaExitCode.Failure,
                 CommandPath = commandPath,
                 DocsUrl = DocsUrl(RunesHelaErrorCodes.ServicesMissing),
             },
@@ -291,7 +315,7 @@ public static class RunesHelaErrors
             {
                 Code = RunesHelaErrorCodes.ServiceMissing,
                 Message = "Command '" + commandPath + "' could not resolve service '" + serviceType + "'.",
-                ExitCode = 1,
+                ExitCode = RunesHelaExitCode.Failure,
                 CommandPath = commandPath,
                 DocsUrl = DocsUrl(RunesHelaErrorCodes.ServiceMissing),
                 NextSteps = new[] { "Register '" + serviceType + "' in the IServiceProvider." },
@@ -312,10 +336,99 @@ public static class RunesHelaErrors
             {
                 Code = RunesHelaErrorCodes.NotImplemented,
                 Message = "Command '" + commandPath + "' is not implemented.",
-                ExitCode = 1,
+                ExitCode = RunesHelaExitCode.Failure,
                 CommandPath = commandPath,
                 DocsUrl = DocsUrl(RunesHelaErrorCodes.NotImplemented),
                 NextSteps = new[] { "Add a public Run, RunAsync, Execute, or ExecuteAsync method." },
+            },
+            json);
+    }
+
+    /// <summary>
+    /// Writes an error for a destructive command that was not confirmed.
+    /// </summary>
+    /// <param name="commandPath">The command path.</param>
+    /// <param name="json">Whether to write JSON.</param>
+    /// <returns>The exit code.</returns>
+    public static int ConfirmationRequired(string commandPath, bool json)
+    {
+        return Write(
+            new RunesHelaError
+            {
+                Code = RunesHelaErrorCodes.ConfirmationRequired,
+                Message = "Command '" + commandPath + "' is destructive and requires confirmation.",
+                Hint = "Pass '--yes' to confirm and run without prompting.",
+                ExitCode = RunesHelaExitCode.Usage,
+                CommandPath = commandPath,
+                DocsUrl = DocsUrl(RunesHelaErrorCodes.ConfirmationRequired),
+                NextSteps = new[] { "Pass '--yes' to confirm.", HelpStep(commandPath) },
+            },
+            json);
+    }
+
+    /// <summary>
+    /// Writes an error for a declined interactive confirmation.
+    /// </summary>
+    /// <param name="commandPath">The command path.</param>
+    /// <param name="json">Whether to write JSON.</param>
+    /// <returns>The exit code.</returns>
+    public static int Aborted(string commandPath, bool json)
+    {
+        return Write(
+            new RunesHelaError
+            {
+                Code = RunesHelaErrorCodes.Aborted,
+                Message = "Command '" + commandPath + "' was not confirmed.",
+                ExitCode = RunesHelaExitCode.Usage,
+                CommandPath = commandPath,
+                DocsUrl = DocsUrl(RunesHelaErrorCodes.Aborted),
+            },
+            json);
+    }
+
+    /// <summary>
+    /// Writes an unsupported output format error.
+    /// </summary>
+    /// <param name="commandPath">The command path, or an empty string for the application root.</param>
+    /// <param name="format">The supplied format value.</param>
+    /// <param name="json">Whether to write JSON.</param>
+    /// <returns>The exit code.</returns>
+    public static int UnsupportedFormat(string commandPath, string format, bool json)
+    {
+        return Write(
+            new RunesHelaError
+            {
+                Code = RunesHelaErrorCodes.UnsupportedFormat,
+                Message = "Unsupported output format '" + format + "'.",
+                Hint = "Use 'text', 'plain', or 'json'.",
+                ExitCode = RunesHelaExitCode.Usage,
+                CommandPath = commandPath,
+                DocsUrl = DocsUrl(RunesHelaErrorCodes.UnsupportedFormat),
+                NextSteps = new[] { HelpStep(commandPath) },
+            },
+            json);
+    }
+
+    /// <summary>
+    /// Writes an error for an unhandled exception.
+    /// </summary>
+    /// <param name="exception">The unhandled exception.</param>
+    /// <param name="verbose">Whether to include the full exception text.</param>
+    /// <param name="json">Whether to write JSON.</param>
+    /// <returns>The exit code.</returns>
+    public static int Unexpected(Exception exception, bool verbose, bool json)
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+
+        return Write(
+            new RunesHelaError
+            {
+                Code = RunesHelaErrorCodes.UnexpectedError,
+                Message = "An unexpected error occurred.",
+                Hint = verbose ? exception.ToString() : exception.Message,
+                ExitCode = RunesHelaExitCode.Failure,
+                DocsUrl = DocsUrl(RunesHelaErrorCodes.UnexpectedError),
+                NextSteps = new[] { "Re-run with '--verbose' for details." },
             },
             json);
     }
@@ -339,6 +452,10 @@ public static class RunesHelaErrors
             RunesHelaErrorCodes.ServicesMissing => ServicesMissingDocs,
             RunesHelaErrorCodes.ServiceMissing => ServiceMissingDocs,
             RunesHelaErrorCodes.NotImplemented => NotImplementedDocs,
+            RunesHelaErrorCodes.ConfirmationRequired => ConfirmationRequiredDocs,
+            RunesHelaErrorCodes.Aborted => AbortedDocs,
+            RunesHelaErrorCodes.UnsupportedFormat => UnsupportedFormatDocs,
+            RunesHelaErrorCodes.UnexpectedError => UnexpectedErrorDocs,
             _ => DocsBase,
         };
     }
@@ -348,5 +465,74 @@ public static class RunesHelaErrors
         return commandPath.Length == 0
             ? "Run '--help' to list options."
             : "Run '" + commandPath + " --help' to list options.";
+    }
+
+    private static class DidYouMean
+    {
+        public static string? Nearest(string input, string[]? candidates)
+        {
+            if (candidates is null || candidates.Length == 0 || input.Length == 0)
+            {
+                return null;
+            }
+
+            string? best = null;
+            var bestDistance = int.MaxValue;
+
+            foreach (var candidate in candidates)
+            {
+                var distance = Distance(input, candidate, 3);
+
+                if (candidate.StartsWith(input, StringComparison.OrdinalIgnoreCase) ||
+                    input.StartsWith(candidate, StringComparison.OrdinalIgnoreCase))
+                {
+                    distance = 0;
+                }
+
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = candidate;
+                }
+            }
+
+            return bestDistance <= 2 ? best : null;
+        }
+
+        private static int Distance(string left, string right, int limit)
+        {
+            if (Math.Abs(left.Length - right.Length) > limit || right.Length > 64)
+            {
+                return limit + 1;
+            }
+
+            Span<int> previous = stackalloc int[right.Length + 1];
+            Span<int> current = stackalloc int[right.Length + 1];
+
+            for (var j = 0; j <= right.Length; j++)
+            {
+                previous[j] = j;
+            }
+
+            for (var i = 1; i <= left.Length; i++)
+            {
+                current[0] = i;
+
+                for (var j = 1; j <= right.Length; j++)
+                {
+                    var cost = char.ToLowerInvariant(left[i - 1]) == char.ToLowerInvariant(right[j - 1]) ? 0 : 1;
+                    var deletion = previous[j] + 1;
+                    var insertion = current[j - 1] + 1;
+                    var substitution = previous[j - 1] + cost;
+                    current[j] = Math.Min(Math.Min(deletion, insertion), substitution);
+                }
+
+                var swap = previous;
+                previous = current;
+                current = swap;
+            }
+
+            return previous[right.Length];
+        }
     }
 }

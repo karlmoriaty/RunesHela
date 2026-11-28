@@ -117,6 +117,13 @@ internal static class CommandModelFactory
             .FirstOrDefault(static argument => argument.Key == "IsDestructive")
             .Value.Value is true;
 
+        var filters = ReadFilters(attribute, compilation, name, location, diagnostics);
+
+        if (filters is null)
+        {
+            return CreateResult(null, diagnostics);
+        }
+
         var examples = DocumentationReader.GetExamples(type, cancellationToken);
         var handlers = FindHandlers(type);
 
@@ -189,6 +196,7 @@ internal static class CommandModelFactory
             isHidden,
             isDestructive,
             new EquatableArray<string>(aliases),
+            new EquatableArray<string>(filters),
             new EquatableArray<OptionModel>(binding.Options.ToArray()),
             new EquatableArray<ParameterModel>(binding.Parameters.ToArray()),
             new EquatableArray<string>(examples),
@@ -204,6 +212,81 @@ internal static class CommandModelFactory
     private static CommandCandidate CreateResult(CommandModel? model, List<DiagnosticInfo> diagnostics)
     {
         return new CommandCandidate(model, new EquatableArray<DiagnosticInfo>(diagnostics.ToArray()));
+    }
+
+    private static string[]? ReadFilters(
+        AttributeData attribute,
+        Compilation compilation,
+        string commandName,
+        LocationInfo location,
+        List<DiagnosticInfo> diagnostics)
+    {
+        var argument = attribute.NamedArguments.FirstOrDefault(static item => item.Key == "Filters");
+
+        if (argument.Value.Kind != TypedConstantKind.Array || argument.Value.IsNull)
+        {
+            return Array.Empty<string>();
+        }
+
+        var filterInterface = compilation.GetTypeByMetadataName("RunesHela.IRunesHelaFilter");
+        var result = new List<string>();
+
+        foreach (var item in argument.Value.Values)
+        {
+            var display = item.Value is ITypeSymbol filterSymbol ? filterSymbol.ToDisplayString() : "?";
+
+            if (item.Value is not INamedTypeSymbol filterType ||
+                filterType.TypeKind != Microsoft.CodeAnalysis.TypeKind.Class ||
+                filterType.IsGenericType ||
+                filterType.IsAbstract)
+            {
+                diagnostics.Add(new DiagnosticInfo("RHL037", location, display, commandName));
+                return null;
+            }
+
+            var implementsContract = false;
+
+            if (filterInterface is not null)
+            {
+                foreach (var @interface in filterType.AllInterfaces)
+                {
+                    if (SymbolEqualityComparer.Default.Equals(@interface, filterInterface))
+                    {
+                        implementsContract = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!implementsContract)
+            {
+                diagnostics.Add(new DiagnosticInfo("RHL038", location, display, commandName));
+                return null;
+            }
+
+            var hasConstructor = false;
+
+            foreach (var constructor in filterType.InstanceConstructors)
+            {
+                if (constructor.Parameters.Length == 0 &&
+                    (constructor.DeclaredAccessibility == Accessibility.Public ||
+                     constructor.DeclaredAccessibility == Accessibility.Internal))
+                {
+                    hasConstructor = true;
+                    break;
+                }
+            }
+
+            if (!hasConstructor)
+            {
+                diagnostics.Add(new DiagnosticInfo("RHL039", location, display, commandName));
+                return null;
+            }
+
+            result.Add(filterType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+        }
+
+        return result.ToArray();
     }
 
     private static bool HasCommandAttribute(INamedTypeSymbol type)

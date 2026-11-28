@@ -59,7 +59,7 @@ public static class RunesHelaApp
     /// <returns>The process exit code.</returns>
     public static ValueTask<int> RunAsync(string[] args, CancellationToken cancellationToken = default)
     {
-        return RunCore(args, services: null, cancellationToken);
+        return RunProtectedAsync(args, services: null, cancellationToken);
     }
 
     /// <summary>
@@ -75,7 +75,7 @@ public static class RunesHelaApp
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(services);
-        return RunCore(args, services, cancellationToken);
+        return RunProtectedAsync(args, services, cancellationToken);
     }
 
     /// <summary>
@@ -88,7 +88,7 @@ public static class RunesHelaApp
         return version is null ? "0.0.0" : version.ToString(3);
     }
 
-    private static ValueTask<int> RunCore(
+    private static async ValueTask<int> RunProtectedAsync(
         string[] args,
         IServiceProvider? services,
         CancellationToken cancellationToken)
@@ -99,9 +99,34 @@ public static class RunesHelaApp
         {
             RunesHelaConsole.Current.Error.WriteLine(
                 "RunesHela: no generated entry point was found. Add [Command] to a class and reference the RunesHela generator.");
-            return new ValueTask<int>(1);
+            return RunesHelaExitCode.Failure;
         }
 
-        return s_entry(args, services, cancellationToken);
+        try
+        {
+            return await s_entry(args, services, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return RunesHelaExitCode.Interrupted;
+        }
+        catch (IOException)
+        {
+            return RunesHelaExitCode.BrokenPipe;
+        }
+        catch (Exception exception)
+        {
+            try
+            {
+                return RunesHelaErrors.Unexpected(
+                    exception,
+                    RunesHelaOutputOptions.WantsVerbose(args),
+                    RunesHelaOutputOptions.WantsJson(args));
+            }
+            catch (IOException)
+            {
+                return RunesHelaExitCode.BrokenPipe;
+            }
+        }
     }
 }

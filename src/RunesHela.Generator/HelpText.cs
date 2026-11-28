@@ -192,6 +192,12 @@ internal static class HelpText
 
                 rows.Add(new Row(left, right));
             }
+
+            if (model.IsDestructive)
+            {
+                rows.Add(new Row("  -y, --yes", "Confirm the destructive operation."));
+                rows.Add(new Row("      --no-input", "Disable interactive prompts."));
+            }
         }
 
         rows.Add(new Row("  -h, --help", "Show help."));

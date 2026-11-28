@@ -42,7 +42,7 @@ internal static class Measure
 
         var best = double.MaxValue;
 
-        for (var round = 0; round < 5; round++)
+        for (var round = 0; round < 7; round++)
         {
             var start = Stopwatch.GetTimestamp();
 

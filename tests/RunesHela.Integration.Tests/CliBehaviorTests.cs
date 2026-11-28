@@ -369,6 +369,189 @@ public sealed class CliBehaviorTests
         Assert.Contains("requires a service provider", result.NormalizedError);
     }
 
+    [Fact]
+    public async Task GlobalJsonFlagBeforeCommandStillProducesJsonHelp()
+    {
+        var result = await Cli.RunAsync(new[] { "--json", "--help" });
+
+        using var document = JsonDocument.Parse(result.Out);
+        Assert.Equal("application", document.RootElement.GetProperty("kind").GetString());
+    }
+
+    [Fact]
+    public async Task FormatFlagAcceptsJsonAndRejectsUnknownValues()
+    {
+        var json = await Cli.RunAsync(new[] { "--format", "json", "--help" });
+        Assert.Equal(0, json.ExitCode);
+        using var document = JsonDocument.Parse(json.Out);
+        Assert.Equal("application", document.RootElement.GetProperty("kind").GetString());
+
+        var invalid = await Cli.RunAsync(new[] { "--format", "yaml", "greet" });
+
+        Assert.Equal(2, invalid.ExitCode);
+        Assert.Contains("Unsupported output format 'yaml'.", invalid.NormalizedError);
+        Assert.Contains("Use 'text', 'plain', or 'json'.", invalid.NormalizedError);
+    }
+
+    [Fact]
+    public async Task SuggestsNearbyOptions()
+    {
+        var result = await Cli.RunAsync(new[] { "greet", "--countt", "2" });
+
+        Assert.Equal(2, result.ExitCode);
+        Assert.Contains("Did you mean '--count'?", result.NormalizedError);
+    }
+
+    [Fact]
+    public async Task SuggestsNearbyCommands()
+    {
+        var result = await Cli.RunAsync(new[] { "greett" });
+
+        Assert.Equal(2, result.ExitCode);
+        Assert.Contains("Did you mean 'greet'?", result.NormalizedError);
+    }
+
+    [Fact]
+    public async Task DescribeOutputsTheFullCommandTree()
+    {
+        var result = await Cli.RunAsync(new[] { "describe" });
+
+        Assert.Equal(0, result.ExitCode);
+
+        using var document = JsonDocument.Parse(result.Out);
+        var root = document.RootElement;
+
+        Assert.Equal("describe", root.GetProperty("kind").GetString());
+        Assert.Equal("RunesHela.Integration.Tests", root.GetProperty("application").GetString());
+
+        var greet = FindCommand(root.GetProperty("commands"), "greet");
+        var count = FindOption(greet, "count");
+
+        Assert.Equal(1, count.GetProperty("default").GetInt32());
+        Assert.Equal("RHL_GREET_COUNT", count.GetProperty("env").GetString());
+
+        var parent = FindCommand(root.GetProperty("commands"), "parent");
+        var child = FindCommand(parent.GetProperty("commands"), "child");
+        var leaf = FindCommand(child.GetProperty("commands"), "leaf");
+        Assert.Equal("parent child leaf", leaf.GetProperty("path").GetString());
+    }
+
+    [Fact]
+    public async Task DescribeMatchesHelpJsonOptions()
+    {
+        var help = await Cli.RunAsync(new[] { "greet", "--help", "--json" });
+        var describe = await Cli.RunAsync(new[] { "describe" });
+
+        using var helpDocument = JsonDocument.Parse(help.Out);
+        using var describeDocument = JsonDocument.Parse(describe.Out);
+
+        var helpNames = helpDocument.RootElement.GetProperty("options")
+            .EnumerateArray()
+            .Select(static option => option.GetProperty("name").GetString())
+            .ToArray();
+
+        var describeCommand = FindCommand(describeDocument.RootElement.GetProperty("commands"), "greet");
+        var describeNames = describeCommand.GetProperty("options")
+            .EnumerateArray()
+            .Select(static option => option.GetProperty("name").GetString())
+            .ToArray();
+
+        Assert.Equal(helpNames, describeNames);
+    }
+
+    [Fact]
+    public async Task DestructiveCommandRequiresConfirmationWhenNotInteractive()
+    {
+        var result = await Cli.RunAsync(new[] { "purge" });
+
+        Assert.Equal(2, result.ExitCode);
+        Assert.Contains("requires confirmation", result.NormalizedError);
+        Assert.Contains("--yes", result.NormalizedError);
+        Assert.Equal(string.Empty, result.Out);
+    }
+
+    [Fact]
+    public async Task DestructiveCommandRunsWithYes()
+    {
+        var result = await Cli.RunAsync(new[] { "purge", "cache", "--yes" });
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal("purged cache\n", result.NormalizedOut);
+    }
+
+    [Fact]
+    public async Task DestructiveCommandRejectsNoInput()
+    {
+        var result = await Cli.RunAsync(new[] { "purge", "--no-input" });
+
+        Assert.Equal(2, result.ExitCode);
+        Assert.Contains("requires confirmation", result.NormalizedError);
+    }
+
+    [Fact]
+    public async Task DestructiveCommandPromptsWhenInteractive()
+    {
+        var declined = await Cli.RunAsync(new[] { "purge" }, input: "n\n", inputRedirected: false);
+        Assert.Equal(2, declined.ExitCode);
+        Assert.Contains("Continue? [y/N]", declined.NormalizedError);
+        Assert.Contains("was not confirmed", declined.NormalizedError);
+
+        var accepted = await Cli.RunAsync(new[] { "purge" }, input: "y\n", inputRedirected: false);
+        Assert.Equal(0, accepted.ExitCode);
+        Assert.Equal("purged all\n", accepted.NormalizedOut);
+    }
+
+    [Fact]
+    public async Task FiltersRunInDeclarationOrder()
+    {
+        FilterLog.Clear();
+
+        var result = await Cli.RunAsync(new[] { "filtered" });
+
+        Assert.Equal(5, result.ExitCode);
+        Assert.Equal(
+            new[]
+            {
+                "outer:before:filtered",
+                "inner:before:filtered",
+                "handler",
+                "inner:after:filtered",
+                "outer:after:filtered",
+            },
+            FilterLog.Entries);
+    }
+
+    [Fact]
+    public async Task UnhandledExceptionsMapToFailureExitCode()
+    {
+        var result = await Cli.RunAsync(new[] { "boom" });
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("An unexpected error occurred.", result.NormalizedError);
+        Assert.Contains("boom", result.NormalizedError);
+    }
+
+    [Fact]
+    public async Task BrokenPipeReturns141()
+    {
+        var exitCode = await Cli.RunWithOutputAsync(new[] { "--help" }, new ThrowingWriter());
+
+        Assert.Equal(141, exitCode);
+    }
+
+    private static JsonElement FindCommand(JsonElement commands, string name)
+    {
+        foreach (var command in commands.EnumerateArray())
+        {
+            if (command.GetProperty("name").GetString() == name)
+            {
+                return command;
+            }
+        }
+
+        throw new InvalidOperationException("Command '" + name + "' was not found.");
+    }
+
     private static JsonElement FindOption(JsonElement root, string name)
     {
         foreach (var option in root.GetProperty("options").EnumerateArray())

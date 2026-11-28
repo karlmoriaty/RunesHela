@@ -13,6 +13,45 @@ public interface IGreeter
     string Greet(string name);
 }
 
+public static class FilterLog
+{
+    private static readonly List<string> s_entries = new();
+
+    public static IReadOnlyList<string> Entries => s_entries;
+
+    public static void Add(string entry)
+    {
+        s_entries.Add(entry);
+    }
+
+    public static void Clear()
+    {
+        s_entries.Clear();
+    }
+}
+
+public sealed class OuterFilter : IRunesHelaFilter
+{
+    public async ValueTask<int> InvokeAsync(CommandContext context, Func<CommandContext, ValueTask<int>> next)
+    {
+        FilterLog.Add("outer:before:" + context.CommandPath);
+        var result = await next(context).ConfigureAwait(false);
+        FilterLog.Add("outer:after:" + context.CommandPath);
+        return result;
+    }
+}
+
+public sealed class InnerFilter : IRunesHelaFilter
+{
+    public async ValueTask<int> InvokeAsync(CommandContext context, Func<CommandContext, ValueTask<int>> next)
+    {
+        FilterLog.Add("inner:before:" + context.CommandPath);
+        var result = await next(context).ConfigureAwait(false);
+        FilterLog.Add("inner:after:" + context.CommandPath);
+        return result;
+    }
+}
+
 /// <summary>
 /// Greets a person.
 /// </summary>
@@ -222,5 +261,40 @@ public sealed class DiCommand
     public void Run()
     {
         Console.WriteLine(_greeter.Greet("di"));
+    }
+}
+
+[Command("purge", Description = "Deletes everything.", IsDestructive = true)]
+public sealed class PurgeCommand
+{
+    [Argument(0, Description = "Target to purge.")]
+    public string Target { get; init; } = "all";
+
+    public int Run()
+    {
+        Console.WriteLine("purged " + Target);
+        return 0;
+    }
+}
+
+[Command("boom", Description = "Throws an exception.")]
+public sealed class BoomCommand
+{
+    public int Run()
+    {
+        throw new InvalidOperationException("boom");
+    }
+}
+
+[Command(
+    "filtered",
+    Description = "Runs through filters.",
+    Filters = new[] { typeof(OuterFilter), typeof(InnerFilter) })]
+public sealed class FilteredCommand
+{
+    public int Run()
+    {
+        FilterLog.Add("handler");
+        return 5;
     }
 }

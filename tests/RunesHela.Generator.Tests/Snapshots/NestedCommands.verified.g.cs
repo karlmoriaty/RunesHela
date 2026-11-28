@@ -12,6 +12,7 @@ internal static class __RunesHelaEntry
 
     private const string RootHelpText = "TestAssembly\n\nUsage: TestAssembly <command> [options]\n\nCommands:\n  remote  Manage remotes.\n\nOptions:\n  -h, --help     Show help.\n      --version  Show version.\n\nExit codes:\n  0  Success\n  1  Failure\n  2  Usage error";
     private const string RootHelpJson = "{\"schemaVersion\":\"1.0\",\"kind\":\"application\",\"name\":\"TestAssembly\",\"path\":\"\",\"description\":null,\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"},{\"name\":\"version\",\"short\":null,\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show version.\"}],\"commands\":[{\"name\":\"remote\",\"aliases\":[],\"description\":\"Manage remotes.\",\"hidden\":false}],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"}]}";
+    private const string DescribeJson = "{\"schemaVersion\":\"1.0\",\"kind\":\"describe\",\"application\":\"TestAssembly\",\"commands\":[{\"name\":\"remote\",\"path\":\"remote\",\"description\":\"Manage remotes.\",\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"},{\"code\":3,\"description\":\"Configuration error\"},{\"code\":4,\"description\":\"Not found\"},{\"code\":5,\"description\":\"Permission denied\"},{\"code\":6,\"description\":\"Conflict\"},{\"code\":7,\"description\":\"Timeout\"},{\"code\":130,\"description\":\"Interrupted\"},{\"code\":141,\"description\":\"Broken pipe\"}],\"commands\":[{\"name\":\"add\",\"path\":\"remote add\",\"description\":\"Add a remote.\",\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"},{\"code\":3,\"description\":\"Configuration error\"},{\"code\":4,\"description\":\"Not found\"},{\"code\":5,\"description\":\"Permission denied\"},{\"code\":6,\"description\":\"Conflict\"},{\"code\":7,\"description\":\"Timeout\"},{\"code\":130,\"description\":\"Interrupted\"},{\"code\":141,\"description\":\"Broken pipe\"}],\"commands\":[]},{\"name\":\"list\",\"path\":\"remote list\",\"description\":\"List remotes.\",\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"},{\"code\":3,\"description\":\"Configuration error\"},{\"code\":4,\"description\":\"Not found\"},{\"code\":5,\"description\":\"Permission denied\"},{\"code\":6,\"description\":\"Conflict\"},{\"code\":7,\"description\":\"Timeout\"},{\"code\":130,\"description\":\"Interrupted\"},{\"code\":141,\"description\":\"Broken pipe\"}],\"commands\":[]}]}]}";
     private const string HelpText0 = "Usage: TestAssembly remote [command] [options]\n\nManage remotes.\n\nCommands:\n  add   Add a remote.\n  list  List remotes.\n\nOptions:\n  -h, --help  Show help.\n\nExit codes:\n  0  Success\n  1  Failure\n  2  Usage error";
     private const string HelpJson0 = "{\"schemaVersion\":\"1.0\",\"kind\":\"command\",\"name\":\"remote\",\"path\":\"remote\",\"description\":\"Manage remotes.\",\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"commands\":[{\"name\":\"add\",\"aliases\":[],\"description\":\"Add a remote.\",\"hidden\":false},{\"name\":\"list\",\"aliases\":[],\"description\":\"List remotes.\",\"hidden\":false}],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"}]}";
     private const string HelpText1 = "Usage: TestAssembly remote add [options]\n\nAdd a remote.\n\nOptions:\n  -h, --help  Show help.\n\nExit codes:\n  0  Success\n  1  Failure\n  2  Usage error";
@@ -19,35 +20,96 @@ internal static class __RunesHelaEntry
     private const string HelpText2 = "Usage: TestAssembly remote list [options]\n\nList remotes.\n\nOptions:\n  -h, --help  Show help.\n\nExit codes:\n  0  Success\n  1  Failure\n  2  Usage error";
     private const string HelpJson2 = "{\"schemaVersion\":\"1.0\",\"kind\":\"command\",\"name\":\"list\",\"path\":\"remote list\",\"description\":\"List remotes.\",\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"commands\":[],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"}]}";
 
+    private static readonly string[] CommandCandidates =
+    [
+        "remote",
+    ];
+
+    private static readonly string[] SubcommandCandidates0 =
+    [
+        "add",
+        "list",
+    ];
+
     public static ValueTask<int> RunAsync(string[] args, global::System.IServiceProvider? services, CancellationToken cancellationToken)
     {
-        if (args.Length == 0)
+        return RunRoot(args.AsSpan(), services, cancellationToken);
+    }
+
+    private static ValueTask<int> RunRoot(ReadOnlySpan<string> args, global::System.IServiceProvider? services, CancellationToken cancellationToken)
+    {
+        var json = global::RunesHela.RunesHelaOutputOptions.WantsJson(args);
+        var commandIndex = -1;
+
+        for (var i = 0; i < args.Length; i++)
         {
-            WriteRootHelp(WantsJson(args));
+            var arg = args[i];
+
+            if (arg == "--") break;
+            if (arg == "-h" || arg == "--help")
+            {
+                WriteRootHelp(json);
+                return new ValueTask<int>(0);
+            }
+
+            if (arg == "--version")
+            {
+                global::RunesHela.RunesHelaConsole.Current.Out.WriteLine(global::RunesHela.RunesHelaApp.GetVersion());
+                return new ValueTask<int>(0);
+            }
+
+            if (arg == "--format")
+            {
+                if (i + 1 >= args.Length)
+                    return new ValueTask<int>(global::RunesHela.RunesHelaErrors.MissingValue(string.Empty, "format", json));
+                if (!global::RunesHela.RunesHelaOutputOptions.IsSupportedFormat(args[i + 1]))
+                    return new ValueTask<int>(global::RunesHela.RunesHelaErrors.UnsupportedFormat(string.Empty, args[i + 1], json));
+                i++;
+                continue;
+            }
+
+            if (arg.StartsWith("--format=", StringComparison.Ordinal))
+            {
+                if (!global::RunesHela.RunesHelaOutputOptions.IsSupportedFormat(arg.AsSpan(9)))
+                    return new ValueTask<int>(global::RunesHela.RunesHelaErrors.UnsupportedFormat(string.Empty, arg.Substring(9), json));
+                continue;
+            }
+
+            if (arg.Length > 2 && arg[0] == '-' && arg[1] == '-' && global::RunesHela.RunesHelaOutputOptions.IsGlobalFlag(arg.AsSpan(2))) continue;
+            if (arg == "-y") continue;
+
+            commandIndex = i;
+            break;
+        }
+
+        if (commandIndex < 0)
+        {
+            WriteRootHelp(json);
             return new ValueTask<int>(0);
         }
 
-        switch (args[0])
+        var command = args[commandIndex];
+
+        if (command == "describe")
         {
-            case "-h":
-            case "--help":
-                WriteRootHelp(WantsJson(args));
-                return new ValueTask<int>(0);
-            case "--version":
-                global::RunesHela.RunesHelaConsole.Current.Out.WriteLine(global::RunesHela.RunesHelaApp.GetVersion());
-                return new ValueTask<int>(0);
+            global::RunesHela.RunesHelaConsole.Current.Out.WriteLine(DescribeJson);
+            return new ValueTask<int>(0);
+        }
+
+        switch (command)
+        {
             case "remote":
-                return RunNode0Async(args.AsSpan(1), services, cancellationToken);
+                return RunNode0Async(args.Slice(commandIndex + 1), json, services, cancellationToken);
             default:
-                return new ValueTask<int>(global::RunesHela.RunesHelaErrors.UnknownCommand(args[0], AppName, WantsJson(args)));
+                return new ValueTask<int>(global::RunesHela.RunesHelaErrors.UnknownCommand(command, AppName, json, CommandCandidates));
         }
     }
 
-    private static ValueTask<int> RunNode0Async(ReadOnlySpan<string> args, global::System.IServiceProvider? services, CancellationToken cancellationToken)
+    private static ValueTask<int> RunNode0Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken)
     {
-        if (WantsHelp(args, false))
+        if (args.Length > 0 && (args[0] == "-h" || args[0] == "--help"))
         {
-            WriteNode0Help(WantsJson(args));
+            WriteNode0Help(json);
             return new ValueTask<int>(0);
         }
 
@@ -56,35 +118,34 @@ internal static class __RunesHelaEntry
             switch (args[0])
             {
                 case "add":
-                    return RunNode1Async(args.Slice(1), services, cancellationToken);
+                    return RunNode1Async(args.Slice(1), json, services, cancellationToken);
                 case "list":
-                    return RunNode2Async(args.Slice(1), services, cancellationToken);
+                    return RunNode2Async(args.Slice(1), json, services, cancellationToken);
             }
         }
 
         if (args.Length == 0)
         {
-            WriteNode0Help(WantsJson(args));
+            WriteNode0Help(json);
             return new ValueTask<int>(0);
         }
 
-        return new ValueTask<int>(global::RunesHela.RunesHelaErrors.UnknownSubcommand("remote", args[0], WantsJson(args)));
+        return new ValueTask<int>(global::RunesHela.RunesHelaErrors.UnknownSubcommand("remote", args[0], json, SubcommandCandidates0));
     }
 
-    private static ValueTask<int> RunNode1Async(ReadOnlySpan<string> args, global::System.IServiceProvider? services, CancellationToken cancellationToken)
+    private static ValueTask<int> RunNode1Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken)
     {
-        if (WantsHelp(args, true))
+        if (global::RunesHela.RunesHelaOutputOptions.WantsHelp(args))
         {
-            WriteNode1Help(WantsJson(args));
+            WriteNode1Help(json);
             return new ValueTask<int>(0);
         }
 
-        return InvokeNode1Async(args, services, cancellationToken);
+        return InvokeNode1Async(args, json, services, cancellationToken);
     }
 
-    private static ValueTask<int> InvokeNode1Async(ReadOnlySpan<string> args, global::System.IServiceProvider? services, CancellationToken cancellationToken)
+    private static ValueTask<int> InvokeNode1Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken)
     {
-        var json = WantsJson(args);
         var bindResult = BindNode1(args, services, cancellationToken, json, out var command);
         if (bindResult != 0)
         {
@@ -107,8 +168,16 @@ internal static class __RunesHelaEntry
             {
                 var name = token.Name;
                 if (name.Equals("help", global::System.StringComparison.OrdinalIgnoreCase)) continue;
-                if (name.Equals("json", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("plain", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("no-color", global::System.StringComparison.OrdinalIgnoreCase)) continue;
-                if (name.Equals("format", global::System.StringComparison.OrdinalIgnoreCase)) { reader.TryReadValue(out _); continue; }
+                if (name.Equals("json", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("plain", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("no-color", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("quiet", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("verbose", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("yes", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("no-input", global::System.StringComparison.OrdinalIgnoreCase)) continue;
+                if (name.Equals("format", global::System.StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!reader.TryReadValue(out var formatValue))
+                        return global::RunesHela.RunesHelaErrors.MissingValue(commandPath, "format", json);
+                    if (!global::RunesHela.RunesHelaOutputOptions.IsSupportedFormat(formatValue.Span))
+                        return global::RunesHela.RunesHelaErrors.UnsupportedFormat(commandPath, global::RunesHela.Parsing.SpanText.ToString(formatValue), json);
+                    continue;
+                }
+                if (token.PrefixLength == 1 && name.Length == 1 && name[0] == 'y') continue;
                 return global::RunesHela.RunesHelaErrors.UnknownOption(commandPath, name.ToString(), json);
             }
             else if (token.Kind == global::RunesHela.Parsing.CommandLineTokenKind.Positional)
@@ -122,20 +191,19 @@ internal static class __RunesHelaEntry
         return 0;
     }
 
-    private static ValueTask<int> RunNode2Async(ReadOnlySpan<string> args, global::System.IServiceProvider? services, CancellationToken cancellationToken)
+    private static ValueTask<int> RunNode2Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken)
     {
-        if (WantsHelp(args, true))
+        if (global::RunesHela.RunesHelaOutputOptions.WantsHelp(args))
         {
-            WriteNode2Help(WantsJson(args));
+            WriteNode2Help(json);
             return new ValueTask<int>(0);
         }
 
-        return InvokeNode2Async(args, services, cancellationToken);
+        return InvokeNode2Async(args, json, services, cancellationToken);
     }
 
-    private static ValueTask<int> InvokeNode2Async(ReadOnlySpan<string> args, global::System.IServiceProvider? services, CancellationToken cancellationToken)
+    private static ValueTask<int> InvokeNode2Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken)
     {
-        var json = WantsJson(args);
         var bindResult = BindNode2(args, services, cancellationToken, json, out var command);
         if (bindResult != 0)
         {
@@ -157,8 +225,16 @@ internal static class __RunesHelaEntry
             {
                 var name = token.Name;
                 if (name.Equals("help", global::System.StringComparison.OrdinalIgnoreCase)) continue;
-                if (name.Equals("json", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("plain", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("no-color", global::System.StringComparison.OrdinalIgnoreCase)) continue;
-                if (name.Equals("format", global::System.StringComparison.OrdinalIgnoreCase)) { reader.TryReadValue(out _); continue; }
+                if (name.Equals("json", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("plain", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("no-color", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("quiet", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("verbose", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("yes", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("no-input", global::System.StringComparison.OrdinalIgnoreCase)) continue;
+                if (name.Equals("format", global::System.StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!reader.TryReadValue(out var formatValue))
+                        return global::RunesHela.RunesHelaErrors.MissingValue(commandPath, "format", json);
+                    if (!global::RunesHela.RunesHelaOutputOptions.IsSupportedFormat(formatValue.Span))
+                        return global::RunesHela.RunesHelaErrors.UnsupportedFormat(commandPath, global::RunesHela.Parsing.SpanText.ToString(formatValue), json);
+                    continue;
+                }
+                if (token.PrefixLength == 1 && name.Length == 1 && name[0] == 'y') continue;
                 return global::RunesHela.RunesHelaErrors.UnknownOption(commandPath, name.ToString(), json);
             }
             else if (token.Kind == global::RunesHela.Parsing.CommandLineTokenKind.Positional)
@@ -170,43 +246,6 @@ internal static class __RunesHelaEntry
         var instance = new global::Demo.RemoteCommand.ListCommand();
         command = instance;
         return 0;
-    }
-
-    private static bool WantsHelp(ReadOnlySpan<string> args, bool anywhere)
-    {
-        for (var i = 0; i < args.Length; i++)
-        {
-            var arg = args[i];
-            if (arg == "--") break;
-            if (arg == "-h" || arg == "--help") return true;
-            if (!anywhere) break;
-        }
-
-        return false;
-    }
-
-    private static bool WantsJson(ReadOnlySpan<string> args)
-    {
-        for (var i = 0; i < args.Length; i++)
-        {
-            var arg = args[i];
-            if (arg == "--") break;
-            if (arg == "--json") return true;
-
-            if (arg == "--format")
-            {
-                if (i + 1 < args.Length && args[i + 1] == "json") return true;
-                i++;
-                continue;
-            }
-
-            if (arg.StartsWith("--format=", StringComparison.Ordinal))
-            {
-                return arg.AsSpan(9).SequenceEqual("json");
-            }
-        }
-
-        return false;
     }
 
     private static void WriteRootHelp(bool json)

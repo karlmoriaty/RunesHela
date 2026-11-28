@@ -67,7 +67,7 @@ internal sealed class BindingEmitter
 
         if (model.Options.Count == 0)
         {
-            EmitGlobalOptionChecks("                ", "name", "json");
+            EmitGlobalOptionChecks("                ");
             _builder.AppendLine("                return global::RunesHela.RunesHelaErrors.UnknownOption(commandPath, name.ToString(), json);");
         }
         else
@@ -258,21 +258,25 @@ internal sealed class BindingEmitter
         }
 
         _builder.AppendLine("                    case -1:");
-        EmitGlobalOptionChecks("                        ", "name", "json");
-        _builder.AppendLine("                        return global::RunesHela.RunesHelaErrors.UnknownOption(commandPath, name.ToString(), json);");
+        EmitGlobalOptionChecks("                        ");
+        _builder.Append("                        return global::RunesHela.RunesHelaErrors.UnknownOption(commandPath, name.ToString(), json, OptionCandidates")
+            .Append(_nodeIndex).AppendLine(");");
         _builder.AppendLine("                }");
     }
 
-    private void EmitGlobalOptionChecks(string indent, string nameExpression, string jsonExpression)
+    private void EmitGlobalOptionChecks(string indent)
     {
-        _builder.Append(indent).Append("if (").Append(nameExpression)
-            .AppendLine(".Equals(\"help\", global::System.StringComparison.OrdinalIgnoreCase)) continue;");
-        _builder.Append(indent).Append("if (").Append(nameExpression)
-            .Append(".Equals(\"json\", global::System.StringComparison.OrdinalIgnoreCase) || ")
-            .Append(nameExpression).Append(".Equals(\"plain\", global::System.StringComparison.OrdinalIgnoreCase) || ")
-            .Append(nameExpression).AppendLine(".Equals(\"no-color\", global::System.StringComparison.OrdinalIgnoreCase)) continue;");
-        _builder.Append(indent).Append("if (").Append(nameExpression)
-            .AppendLine(".Equals(\"format\", global::System.StringComparison.OrdinalIgnoreCase)) { reader.TryReadValue(out _); continue; }");
+        _builder.Append(indent).AppendLine("if (name.Equals(\"help\", global::System.StringComparison.OrdinalIgnoreCase)) continue;");
+        _builder.Append(indent).AppendLine("if (name.Equals(\"json\", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals(\"plain\", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals(\"no-color\", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals(\"quiet\", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals(\"verbose\", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals(\"yes\", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals(\"no-input\", global::System.StringComparison.OrdinalIgnoreCase)) continue;");
+        _builder.Append(indent).AppendLine("if (name.Equals(\"format\", global::System.StringComparison.OrdinalIgnoreCase))");
+        _builder.Append(indent).AppendLine("{");
+        _builder.Append(indent).AppendLine("    if (!reader.TryReadValue(out var formatValue))");
+        _builder.Append(indent).AppendLine("        return global::RunesHela.RunesHelaErrors.MissingValue(commandPath, \"format\", json);");
+        _builder.Append(indent).AppendLine("    if (!global::RunesHela.RunesHelaOutputOptions.IsSupportedFormat(formatValue.Span))");
+        _builder.Append(indent).AppendLine("        return global::RunesHela.RunesHelaErrors.UnsupportedFormat(commandPath, global::RunesHela.Parsing.SpanText.ToString(formatValue), json);");
+        _builder.Append(indent).AppendLine("    continue;");
+        _builder.Append(indent).AppendLine("}");
+        _builder.Append(indent).AppendLine("if (token.PrefixLength == 1 && name.Length == 1 && name[0] == 'y') continue;");
     }
 
     private void EmitOptionCase(OptionModel option, int index, string indent)
@@ -719,6 +723,16 @@ internal sealed class BindingEmitter
 
     private void EmitConstruction(CommandModel model)
     {
+        if (model.IsDestructive)
+        {
+            _builder.AppendLine("        var guardResult = global::RunesHela.RunesHelaGuard.EnsureConfirmed(commandPath, global::RunesHela.RunesHelaOutputOptions.WantsYes(args), global::RunesHela.RunesHelaOutputOptions.WantsNoInput(args), json);");
+            _builder.AppendLine("        if (guardResult != 0)");
+            _builder.AppendLine("        {");
+            _builder.AppendLine("            return guardResult;");
+            _builder.AppendLine("        }");
+            _builder.AppendLine();
+        }
+
         if (model.IsStatic)
         {
             _builder.AppendLine("        return 0;");

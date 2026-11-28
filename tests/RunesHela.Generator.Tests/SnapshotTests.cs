@@ -209,4 +209,51 @@ public sealed class SnapshotTests
         Assert.Empty(result.CompileErrors);
         Snapshot.Verify(nameof(OptionsAndHelp), result.GeneratedSource);
     }
+
+    [Fact]
+    public void AgentContract()
+    {
+        const string source = """
+            using System;
+            using System.Threading.Tasks;
+            using RunesHela;
+
+            namespace Demo;
+
+            public sealed class AuditFilter : IRunesHelaFilter
+            {
+                public ValueTask<int> InvokeAsync(CommandContext context, Func<CommandContext, ValueTask<int>> next)
+                {
+                    return next(context);
+                }
+            }
+
+            /// <summary>
+            /// Purges a target.
+            /// </summary>
+            [Command(
+                "purge",
+                Description = "Purges a target.",
+                IsDestructive = true,
+                Filters = new[] { typeof(AuditFilter) })]
+            public sealed class PurgeCommand
+            {
+                /// <summary>
+                /// Target to purge.
+                /// </summary>
+                [Argument(0, Description = "Target to purge.")]
+                public string Target { get; init; } = "all";
+
+                public int Run()
+                {
+                    return 0;
+                }
+            }
+            """;
+
+        var result = GeneratorTests.RunGenerator(source);
+
+        Assert.Empty(result.CompileErrors);
+        Snapshot.Verify(nameof(AgentContract), result.GeneratedSource);
+    }
 }

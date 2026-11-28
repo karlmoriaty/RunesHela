@@ -4,20 +4,26 @@ namespace RunesHela.Integration.Tests;
 
 internal sealed class TestConsole : IConsole
 {
-    private readonly StringWriter _out;
-    private readonly StringWriter _error;
+    private readonly TextWriter _out;
+    private readonly TextWriter _error;
+    private readonly TextReader _in;
 
-    public TestConsole(StringWriter output, StringWriter error)
+    public TestConsole(TextWriter output, TextWriter error, TextReader? input = null)
     {
         _out = output;
         _error = error;
+        _in = input ?? TextReader.Null;
     }
 
     public TextWriter Out => _out;
 
     public TextWriter Error => _error;
 
+    public TextReader In => _in;
+
     public bool IsOutputRedirected => true;
+
+    public bool IsInputRedirected { get; init; } = true;
 
     public bool IsAnsiSupported { get; init; }
 }
@@ -34,26 +40,46 @@ internal static class Cli
     public static async Task<CliResult> RunAsync(
         string[] args,
         IServiceProvider? services = null,
-        bool ansi = false)
+        bool ansi = false,
+        string? input = null,
+        bool inputRedirected = true)
     {
         var output = new StringWriter();
         var error = new StringWriter();
-        var console = new TestConsole(output, error) { IsAnsiSupported = ansi };
+        var console = new TestConsole(output, error, input is null ? null : new StringReader(input))
+        {
+            IsAnsiSupported = ansi,
+            IsInputRedirected = inputRedirected,
+        };
+
+        var exitCode = await RunWithConsoleAsync(args, console, services).ConfigureAwait(false);
+        return new CliResult(exitCode, output.ToString(), error.ToString());
+    }
+
+    public static Task<int> RunWithOutputAsync(string[] args, TextWriter output)
+    {
+        var console = new TestConsole(output, new StringWriter());
+        return RunWithConsoleAsync(args, console, services: null);
+    }
+
+    private static async Task<int> RunWithConsoleAsync(
+        string[] args,
+        TestConsole console,
+        IServiceProvider? services)
+    {
         var previousConsole = RunesHelaConsole.Current;
         var previousOut = Console.Out;
         var previousError = Console.Error;
 
         RunesHelaConsole.Current = console;
-        Console.SetOut(output);
-        Console.SetError(error);
+        Console.SetOut(console.Out);
+        Console.SetError(console.Error);
 
         try
         {
-            var exitCode = services is null
-                ? await RunesHelaApp.RunAsync(args)
-                : await RunesHelaApp.RunAsync(args, services);
-
-            return new CliResult(exitCode, output.ToString(), error.ToString());
+            return services is null
+                ? await RunesHelaApp.RunAsync(args).ConfigureAwait(false)
+                : await RunesHelaApp.RunAsync(args, services).ConfigureAwait(false);
         }
         finally
         {
@@ -76,5 +102,25 @@ internal sealed class SimpleServiceProvider : IServiceProvider
     public void Add(Type serviceType, object instance)
     {
         _services[serviceType] = instance;
+    }
+}
+
+internal sealed class ThrowingWriter : TextWriter
+{
+    public override System.Text.Encoding Encoding => System.Text.Encoding.UTF8;
+
+    public override void Write(char value)
+    {
+        throw new IOException("The pipe is closed.");
+    }
+
+    public override void Write(string? value)
+    {
+        throw new IOException("The pipe is closed.");
+    }
+
+    public override void WriteLine(string? value)
+    {
+        throw new IOException("The pipe is closed.");
     }
 }

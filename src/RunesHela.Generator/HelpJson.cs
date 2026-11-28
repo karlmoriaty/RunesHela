@@ -55,6 +55,12 @@ internal static class HelpJson
             {
                 AppendOption(builder, option);
             }
+
+            if (model.IsDestructive)
+            {
+                AppendGlobalOption(builder, "yes", "y", "Confirm the destructive operation.");
+                AppendGlobalOption(builder, "no-input", null, "Disable interactive prompts.");
+            }
         }
 
         AppendGlobalOption(builder, "help", "h", "Show help.");
@@ -97,7 +103,7 @@ internal static class HelpJson
         return builder.ToString();
     }
 
-    private static void AppendOption(JsonBuilder builder, OptionModel option)
+    internal static void AppendOption(JsonBuilder builder, OptionModel option)
     {
         builder.StartObject();
         builder.Name("name").Value(option.LongName);
@@ -126,7 +132,7 @@ internal static class HelpJson
         builder.EndObject();
     }
 
-    private static void AppendArgument(JsonBuilder builder, ParameterModel parameter)
+    internal static void AppendArgument(JsonBuilder builder, ParameterModel parameter)
     {
         builder.StartObject();
         builder.Name("name").Value(parameter.Name);
@@ -181,7 +187,7 @@ internal static class HelpJson
         }
     }
 
-    private static void AppendGlobalOption(
+    internal static void AppendGlobalOption(
         JsonBuilder builder,
         string name,
         string? shortName,
@@ -225,7 +231,7 @@ internal static class HelpJson
         builder.EndObject();
     }
 
-    private static void AppendExitCode(JsonBuilder builder, int code, string description)
+    internal static void AppendExitCode(JsonBuilder builder, int code, string description)
     {
         builder.StartObject();
         builder.Name("code").Value(code);
