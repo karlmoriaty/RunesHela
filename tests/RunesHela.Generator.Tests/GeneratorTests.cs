@@ -927,6 +927,50 @@ public sealed class GeneratorTests
             result.GeneratedSource);
     }
 
+    [Fact]
+    public void EmitsMcpManifestForExecutableCommands()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("greet", Description = "Greets.")]
+            public sealed class GreetCommand
+            {
+                [Argument(0, Description = "Name.")]
+                public string Name { get; init; } = "world";
+
+                [Option(Description = "Count.")]
+                public int Count { get; init; } = 1;
+
+                public void Run()
+                {
+                }
+            }
+
+            [Command("parent", Description = "Parent.")]
+            public sealed class ParentCommand
+            {
+                [Command("child", Description = "Child.")]
+                public sealed class ChildCommand
+                {
+                    public void Run()
+                    {
+                    }
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.CompileErrors);
+        Assert.Contains("x-runeshela-option", result.GeneratedSource);
+        Assert.Contains("x-runeshela-position", result.GeneratedSource);
+        Assert.Contains("parent_child", result.GeneratedSource);
+        Assert.Contains("destructiveHint", result.GeneratedSource);
+    }
+
     internal static GeneratorResult RunGenerator(string source)
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);

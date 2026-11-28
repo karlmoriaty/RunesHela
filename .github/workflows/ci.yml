@@ -144,6 +144,7 @@ jobs:
           ./artifacts/aot/${{ matrix.rid }}/AotCli$exe completion bash > /dev/null
           ./artifacts/aot/${{ matrix.rid }}/AotCli$exe docs > /dev/null
           ./artifacts/aot/${{ matrix.rid }}/AotCli$exe man > /dev/null
+          ./artifacts/aot/${{ matrix.rid }}/AotCli$exe mcp --manifest > /dev/null
 
       - name: Measure AOT startup and size
         if: matrix.rid == 'linux-x64'

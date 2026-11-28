@@ -66,12 +66,12 @@ internal static class ConfigSchema
         {
             builder.Name("type").Value("array");
             builder.Name("items").StartObject();
-            AppendType(builder, option.Type.ElementType!);
+            TypeSchema.Append(builder, option.Type.ElementType!);
             builder.EndObject();
         }
         else
         {
-            AppendType(builder, option.Type);
+            TypeSchema.Append(builder, option.Type);
         }
 
         if (option.Description.Length > 0)
@@ -79,74 +79,8 @@ internal static class ConfigSchema
             builder.Name("description").Value(option.Description);
         }
 
-        if (option.HasDefault && !option.IsSecret && option.DefaultLiteral != "null" && option.DefaultDisplay.Length > 0)
-        {
-            builder.Name("default");
-
-            switch (option.Type.Kind)
-            {
-                case TypeKind.Boolean:
-                    builder.Raw(option.DefaultLiteral == "true" ? "true" : "false");
-                    break;
-
-                case TypeKind.Integer:
-                case TypeKind.Floating:
-                case TypeKind.Decimal:
-                    builder.Raw(option.DefaultDisplay);
-                    break;
-
-                default:
-                    builder.Value(option.DefaultDisplay);
-                    break;
-            }
-        }
-
+        TypeSchema.AppendDefault(builder, option);
         builder.EndObject();
-    }
-
-    private static void AppendType(JsonBuilder builder, TypeModel type)
-    {
-        switch (type.Kind)
-        {
-            case TypeKind.Boolean:
-                builder.Name("type").Value("boolean");
-                break;
-
-            case TypeKind.Integer:
-                builder.Name("type").Value("integer");
-                break;
-
-            case TypeKind.Floating:
-            case TypeKind.Decimal:
-                builder.Name("type").Value("number");
-                break;
-
-            case TypeKind.Enum:
-                builder.Name("type").Value("string");
-                builder.Name("enum").StartArray();
-
-                foreach (var member in type.Members)
-                {
-                    builder.Value(member);
-                }
-
-                builder.EndArray();
-                break;
-
-            case TypeKind.Guid:
-                builder.Name("type").Value("string");
-                builder.Name("format").Value("uuid");
-                break;
-
-            case TypeKind.Uri:
-                builder.Name("type").Value("string");
-                builder.Name("format").Value("uri");
-                break;
-
-            default:
-                builder.Name("type").Value("string");
-                break;
-        }
     }
 
     private sealed class SchemaNode

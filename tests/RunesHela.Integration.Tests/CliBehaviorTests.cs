@@ -900,6 +900,164 @@ public sealed class CliBehaviorTests
         Assert.Contains("Config", (await Cli.RunAsync(new[] { "docs" })).NormalizedOut);
     }
 
+    [Fact]
+    public async Task McpManifestMatchesDescribeModel()
+    {
+        var manifest = await Cli.RunAsync(new[] { "mcp", "--manifest" });
+        var describe = await Cli.RunAsync(new[] { "describe" });
+
+        Assert.Equal(0, manifest.ExitCode);
+
+        using var manifestDocument = JsonDocument.Parse(manifest.Out);
+        using var describeDocument = JsonDocument.Parse(describe.Out);
+
+        Assert.Equal("mcp", manifestDocument.RootElement.GetProperty("kind").GetString());
+
+        var tools = manifestDocument.RootElement.GetProperty("tools").EnumerateArray().ToArray();
+        var names = tools.Select(static tool => tool.GetProperty("name").GetString()).ToArray();
+
+        Assert.Contains("greet", names);
+        Assert.Contains("deploy", names);
+        Assert.Contains("parent_child_leaf", names);
+        Assert.DoesNotContain("pending", names);
+        Assert.Contains(
+            describeDocument.RootElement.GetProperty("commands").EnumerateArray(),
+            static command => command.GetProperty("name").GetString() == "greet");
+
+        var greet = FindTool(tools, "greet");
+        var properties = greet.GetProperty("inputSchema").GetProperty("properties");
+
+        Assert.Equal(0, properties.GetProperty("name").GetProperty("x-runeshela-position").GetInt32());
+        Assert.Equal("count", properties.GetProperty("count").GetProperty("x-runeshela-option").GetString());
+        Assert.Equal("integer", properties.GetProperty("count").GetProperty("type").GetString());
+        Assert.Equal(1, properties.GetProperty("count").GetProperty("default").GetInt32());
+        Assert.Equal("array", properties.GetProperty("tags").GetProperty("type").GetString());
+        Assert.Equal("boolean", properties.GetProperty("loud").GetProperty("type").GetString());
+
+        var deploy = FindTool(tools, "deploy");
+        var required = deploy.GetProperty("inputSchema").GetProperty("required")
+            .EnumerateArray()
+            .Select(static value => value.GetString())
+            .ToArray();
+
+        Assert.Equal(new[] { "environment" }, required);
+
+        var purge = FindTool(tools, "purge");
+
+        Assert.True(purge.GetProperty("annotations").GetProperty("destructiveHint").GetBoolean());
+        Assert.False(purge.GetProperty("annotations").GetProperty("idempotentHint").GetBoolean());
+        Assert.False(greet.GetProperty("annotations").GetProperty("destructiveHint").GetBoolean());
+        Assert.True(greet.GetProperty("annotations").GetProperty("idempotentHint").GetBoolean());
+    }
+
+    [Fact]
+    public async Task McpStdioHandlesInitializeListAndCall()
+    {
+        var lines = await RunMcpAsync(
+            """{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}""",
+            """{"jsonrpc":"2.0","method":"notifications/initialized"}""",
+            """{"jsonrpc":"2.0","id":2,"method":"tools/list"}""",
+            """{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"greet","arguments":{"name":"Ada","count":2}}}""");
+
+        Assert.Equal(3, lines.Length);
+
+        using var initialize = JsonDocument.Parse(lines[0]);
+        Assert.Equal(
+            "2025-06-18",
+            initialize.RootElement.GetProperty("result").GetProperty("protocolVersion").GetString());
+
+        using var list = JsonDocument.Parse(lines[1]);
+        Assert.Contains(
+            list.RootElement.GetProperty("result").GetProperty("tools").EnumerateArray(),
+            static tool => tool.GetProperty("name").GetString() == "greet");
+
+        using var call = JsonDocument.Parse(lines[2]);
+        var result = call.RootElement.GetProperty("result");
+
+        Assert.False(result.GetProperty("isError").GetBoolean());
+
+        var text = result.GetProperty("content")[0].GetProperty("text").GetString()!.Replace("\r\n", "\n");
+        Assert.Equal("Hello, Ada!\nHello, Ada!\n", text);
+        Assert.Equal(0, result.GetProperty("structuredContent").GetProperty("exitCode").GetInt32());
+    }
+
+    [Fact]
+    public async Task McpStdioEnforcesDestructiveConfirmation()
+    {
+        var rejected = await RunMcpAsync(
+            """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"purge","arguments":{"target":"cache"}}}""");
+
+        using var rejectedDocument = JsonDocument.Parse(rejected[0]);
+        var rejectedResult = rejectedDocument.RootElement.GetProperty("result");
+
+        Assert.True(rejectedResult.GetProperty("isError").GetBoolean());
+        Assert.Contains("requires confirmation", rejectedResult.GetProperty("content")[0].GetProperty("text").GetString());
+        Assert.Equal(2, rejectedResult.GetProperty("structuredContent").GetProperty("exitCode").GetInt32());
+
+        var accepted = await RunMcpAsync(
+            """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"purge","arguments":{"target":"cache","yes":true}}}""");
+
+        using var acceptedDocument = JsonDocument.Parse(accepted[0]);
+        var acceptedResult = acceptedDocument.RootElement.GetProperty("result");
+
+        Assert.False(acceptedResult.GetProperty("isError").GetBoolean());
+        Assert.Contains("purged cache", acceptedResult.GetProperty("content")[0].GetProperty("text").GetString());
+    }
+
+    [Fact]
+    public async Task McpStdioMapsCliErrorsAndProtocolErrors()
+    {
+        var lines = await RunMcpAsync(
+            """{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"deploy","arguments":{}}}""",
+            """{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"nope","arguments":{}}}""",
+            """{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"greet","arguments":{"nope":1}}}""",
+            """{"jsonrpc":"2.0","id":4,"method":"unknown"}""",
+            """not-json""");
+
+        Assert.Equal(5, lines.Length);
+
+        using var missingRequired = JsonDocument.Parse(lines[0]);
+        var missingResult = missingRequired.RootElement.GetProperty("result");
+
+        Assert.True(missingResult.GetProperty("isError").GetBoolean());
+        Assert.Contains("Missing required option '--environment'.", missingResult.GetProperty("content")[0].GetProperty("text").GetString());
+        Assert.Equal(2, missingResult.GetProperty("structuredContent").GetProperty("exitCode").GetInt32());
+
+        using var unknownTool = JsonDocument.Parse(lines[1]);
+        Assert.Equal(-32602, unknownTool.RootElement.GetProperty("error").GetProperty("code").GetInt32());
+
+        using var unknownArgument = JsonDocument.Parse(lines[2]);
+        Assert.Equal(-32602, unknownArgument.RootElement.GetProperty("error").GetProperty("code").GetInt32());
+
+        using var unknownMethod = JsonDocument.Parse(lines[3]);
+        Assert.Equal(-32601, unknownMethod.RootElement.GetProperty("error").GetProperty("code").GetInt32());
+
+        using var parseError = JsonDocument.Parse(lines[4]);
+        Assert.Equal(-32700, parseError.RootElement.GetProperty("error").GetProperty("code").GetInt32());
+    }
+
+    private static async Task<string[]> RunMcpAsync(params string[] messages)
+    {
+        var input = string.Join("\n", messages) + "\n";
+        var result = await Cli.RunAsync(new[] { "mcp", "--stdio" }, input: input);
+
+        Assert.Equal(0, result.ExitCode);
+        return result.NormalizedOut.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+    }
+
+    private static JsonElement FindTool(IEnumerable<JsonElement> tools, string name)
+    {
+        foreach (var tool in tools)
+        {
+            if (tool.GetProperty("name").GetString() == name)
+            {
+                return tool;
+            }
+        }
+
+        throw new InvalidOperationException("Tool '" + name + "' was not found.");
+    }
+
     private static string CreateConfigFile(string json)
     {
         var path = Path.Combine(Path.GetTempPath(), "runeshela-config-" + Guid.NewGuid().ToString("N") + ".json");

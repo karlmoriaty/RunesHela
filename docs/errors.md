@@ -70,6 +70,19 @@ Configuration errors never include the offending value, and sensitive keys are r
 
 `RunesHelaApp` maps a cancelled token to `130` and any `IOException` escaping the entry point to `141`. Both are written without an error envelope because the diagnostic channel may also be closed.
 
+## MCP server errors
+
+`app mcp --stdio` speaks JSON-RPC 2.0. Protocol failures use standard codes; command failures stay inside `tools/call` results.
+
+| Code | Meaning |
+|---:|---|
+| -32700 | Parse error |
+| -32600 | Invalid Request |
+| -32601 | Method not found |
+| -32602 | Unknown tool or argument |
+
+`tools/call` never converts CLI failures into protocol errors: the result carries `isError: true`, stdout/stderr as text content, and `structuredContent.exitCode` (for example `2` for usage or confirmation failures, `3` for configuration errors). This keeps Agent retry and error handling uniform with the CLI contract.
+
 ## Generator diagnostics
 
 | Code | Severity | Meaning |

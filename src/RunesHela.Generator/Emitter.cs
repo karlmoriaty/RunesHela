@@ -37,6 +37,7 @@ internal static class Emitter
         AppendConst(builder, "DocsMarkdown", DocsMarkdown.Build(appName, roots));
         AppendConst(builder, "ManRoff", ManRoff.Build(appName, roots));
         AppendConst(builder, "ConfigSchema", ConfigSchema.Build(appName, roots));
+        AppendConst(builder, "McpManifest", McpManifest.Build(appName, roots));
 
         for (var i = 0; i < allNodes.Count; i++)
         {
@@ -73,6 +74,7 @@ internal static class Emitter
         }
 
         AppendArtifactHelpers(builder, allNodes);
+        AppendMcpHelper(builder);
         AppendWriteHelpers(builder, allNodes);
         AppendAwaitHelpers(builder);
 
@@ -297,6 +299,11 @@ internal static class Emitter
         builder.AppendLine("        {");
         builder.AppendLine("            global::RunesHela.RunesHelaConsole.Current.Out.WriteLine(ConfigSchema);");
         builder.AppendLine("            return new ValueTask<int>(0);");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        if (command == \"mcp\")");
+        builder.AppendLine("        {");
+        builder.AppendLine("            return RunMcp(args.Slice(commandIndex + 1), services, cancellationToken, json);");
         builder.AppendLine("        }");
         builder.AppendLine();
         builder.AppendLine("        if (command == \"__complete\")");
@@ -632,6 +639,37 @@ internal static class Emitter
         builder.AppendLine("        }");
         builder.AppendLine();
         builder.AppendLine("        return 0;");
+        builder.AppendLine("    }");
+        builder.AppendLine();
+    }
+
+    private static void AppendMcpHelper(StringBuilder builder)
+    {
+        builder.AppendLine("    private static ValueTask<int> RunMcp(ReadOnlySpan<string> args, global::System.IServiceProvider? services, CancellationToken cancellationToken, bool json)");
+        builder.AppendLine("    {");
+        builder.AppendLine("        var stdio = false;");
+        builder.AppendLine();
+        builder.AppendLine("        for (var i = 0; i < args.Length; i++)");
+        builder.AppendLine("        {");
+        builder.AppendLine("            if (args[i] == \"--stdio\") { stdio = true; continue; }");
+        builder.AppendLine("            if (args[i] == \"--manifest\") continue;");
+        builder.AppendLine("            return new ValueTask<int>(global::RunesHela.RunesHelaErrors.UnknownOption(\"mcp\", args[i].TrimStart('-'), json));");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        if (stdio)");
+        builder.AppendLine("        {");
+        builder.AppendLine("            var exitCode = global::RunesHela.RunesHelaMcpServer.Run(");
+        builder.AppendLine("                McpManifest,");
+        builder.AppendLine("                AppName,");
+        builder.AppendLine("                global::RunesHela.RunesHelaApp.GetVersion(),");
+        builder.AppendLine("                global::RunesHela.RunesHelaConsole.Interactive!.In,");
+        builder.AppendLine("                global::RunesHela.RunesHelaConsole.Current.Out,");
+        builder.AppendLine("                toolArgs => RunRoot(toolArgs, services, cancellationToken).GetAwaiter().GetResult());");
+        builder.AppendLine("            return new ValueTask<int>(exitCode);");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        global::RunesHela.RunesHelaConsole.Current.Out.WriteLine(McpManifest);");
+        builder.AppendLine("        return new ValueTask<int>(0);");
         builder.AppendLine("    }");
         builder.AppendLine();
     }

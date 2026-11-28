@@ -19,6 +19,7 @@ internal static class CommandModelFactory
         "docs",
         "man",
         "schema",
+        "mcp",
         "__complete",
     };
 

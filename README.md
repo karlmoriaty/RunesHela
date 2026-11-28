@@ -1,7 +1,7 @@
 # RunesHela · 设计文档集
 
 > **项目名称**：RunesHela（已选定，2026-11-26；见 [06 决策记录](./docs/06-决策记录.md) D-06）
-> **状态**：**M6 已完成（2026-11-28）**，下一步 M7（MCP，可选）
+> **状态**：**M7 已完成（2026-11-28）**，下一步 M8（发布与社区）
 > **日期**：2026-11-28
 
 ---
@@ -103,7 +103,7 @@ app greet --help --json
 - **动态补全**：隐藏命令 `app __complete <words...>` 按前缀返回候选（命令/子命令/选项），供脚本或 Agent 消费。
 - **文档产物**：`app docs` 输出 Markdown（参数/选项/默认值/ENV/子命令），`app man` 输出 roff（`man -l` 可用）。
 - **产物一致性**：help、describe、completion、docs 同源；集成测试逐项比对选项集合与命令集合，防止漂移。
-- **保留名保护**：`describe`/`completion`/`docs`/`man`/`__complete` 被注册为保留命令名（RHL025）。
+- **保留名保护**：`describe`/`schema`/`mcp`/`completion`/`docs`/`man`/`__complete` 被注册为保留命令名（RHL025）。
 
 ### M6 已具备的能力（配置）
 
@@ -116,6 +116,15 @@ app greet --help --json
 - **Schema**：`app schema`（兼容 `app schema --config`）输出 JSON Schema 2020-12，键/类型/默认值与 `describe` 一致；`[Secret]` 不输出默认值。
 - **脱敏**：配置/ENV/CLI 的密钥值在错误与 JSON 中均为 `***` 或完全不出现；Unix 下世界可读且含敏感键的配置文件给出警告（`RHL_NO_CONFIG_WARNINGS=1` 可关闭）。
 - **AOT**：`System.Text.Json` 进入产物后体积增量升至 560.7 KB（启动增量 0.28 ms 仍在预算内），与 M4/M5 一并记为 M8 发布前技术债。
+
+### M7 已具备的能力（MCP）
+
+- **Manifest**：`app mcp --manifest` 输出来自同一命令模型的工具清单（`name`/`description`/`inputSchema`/`annotations`），仅包含可执行且未隐藏的命令。
+- **工具映射**：嵌套命令路径转 `parent_child_leaf`；参数用 `x-runeshela-position`、选项用 `x-runeshela-option` 映射回 CLI；破坏性命令提供 `yes` 布尔确认项。
+- **注解**：`destructiveHint` 来自 `[Command(IsDestructive = true)]`；`idempotentHint`/`readOnlyHint`/`openWorldHint` 采用保守默认值。
+- **stdio server**：`app mcp --stdio` 逐行 JSON-RPC，支持 `initialize`、`notifications/initialized`、`ping`、`tools/list`、`tools/call`；单线程顺序执行。
+- **结果契约**：stdout/stderr 作为 `content` 文本项返回，`isError` 对应非零退出码，`structuredContent.exitCode` 提供机器可读状态；CLI 错误（缺失必填、破坏性未确认）原样映射为工具错误。
+- **零依赖**：JSON-RPC 与参数映射使用 BCL `JsonDocument` + 手写 JSON 输出，无第三方 MCP SDK。
 
 ---
 
@@ -136,7 +145,8 @@ app greet --help --json
 | 10 | [M4 基准报告](./docs/benchmarks/M4-基准报告.md) | Agent 契约：非 TTY、错误建议、破坏性守卫、退出码、EPIPE、过滤器 | 开发/评审 | ✅ M4 通过 |
 | 11 | [M5 基准报告](./docs/benchmarks/M5-基准报告.md) | 四 shell 补全、动态补全、Man/Markdown、产物一致性 | 开发/评审 | ✅ M5 通过 |
 | 12 | [M6 基准报告](./docs/benchmarks/M6-基准报告.md) | 配置优先级、JSON/ENV、Schema、脱敏与零分配快路径 | 开发/评审 | ✅ M6 通过 |
-| 13 | [错误码与诊断](./docs/errors.md) | 运行时 `RHL_*` 错误码、`RHLxxx` 诊断码、退出码矩阵 | 开发/使用 | ✅ 随 M6 更新 |
+| 13 | [M7 基准报告](./docs/benchmarks/M7-基准报告.md) | MCP Manifest、stdio JSON-RPC、工具调用与注解 | 开发/评审 | ✅ M7 通过 |
+| 14 | [错误码与诊断](./docs/errors.md) | 运行时 `RHL_*` 错误码、`RHLxxx` 诊断码、退出码矩阵 | 开发/使用 | ✅ 随 M7 更新 |
 
 ---
 
@@ -199,7 +209,7 @@ app greet --help --json
 
 ## 边界声明
 
-- 当前已完成 **M6**（2026-11-28）：JSON 配置、ENV 约定与优先级、配置 Schema、脱敏与退出码 3；下一步 M7（MCP，可选）。
+- 当前已完成 **M7**（2026-11-28）：MCP Manifest 与 stdio JSON-RPC server（零第三方依赖）；下一步 M8（发布与社区）。
 - 以上决议已按你的选择写入文档；项目已按决议进入开发。
 
 ---
