@@ -116,12 +116,12 @@ dotnet publish -c Release -r linux-x64 -p:PublishAot=true
 ```
 
 The generated app has no runtime reflection and no third-party runtime
-dependencies. Check `docs/benchmarks/M8-基准报告.md` for the current size
+dependencies. Check `docs/benchmarks/M8-benchmark-report.md` for the current size
 measurement before shipping size-sensitive tools.
 
 ## Next steps
 
-- [Technical design](02-技术设计文档.md)
+- [Technical design](02-technical-design.md)
 - [Error codes](errors.md)
 - [Migration guide](migration.md)
 - [Release process](release.md)

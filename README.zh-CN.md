@@ -147,7 +147,7 @@ app mcp --manifest
 | Native AOT 启动增量 | ≤ 1 ms | 0.11 ms |
 | Native AOT 体积增量 | 目标 ≤ 100 KB，失败阈值 150 KB | 432.7 KB（已知限制，V1.1） |
 
-体积差距记录在 [M8 基准报告](docs/benchmarks/M8-基准报告.md)。1.0.0 已移除
+体积差距记录在 [M8 基准报告](docs/benchmarks/M8-benchmark-report.md)。1.0.0 已移除
 `System.Text.Json`，剩余增量来自原生代码与可达框架成员，而非字符串常量；V1.1 计划
 提供 minimal profile。
 
@@ -172,10 +172,10 @@ app mcp --manifest
 | [迁移指南](docs/migration.md) | 从 System.CommandLine、Spectre.Console.Cli、ConsoleAppFramework、手写 `Main` 迁移 |
 | [错误码](docs/errors.md) | 运行时 `RHL_*`、编译期 `RHLxxx`、退出码 |
 | [发布流程](docs/release.md) | 版本、可信发布、回滚、供应链 |
-| [基准报告](docs/benchmarks/M8-基准报告.md) | M0–M8 性能、AOT、打包报告 |
+| [基准报告](docs/benchmarks/M8-benchmark-report.md) | M0–M8 性能、AOT、打包报告 |
 | [English README](README.md) | English documentation |
 
-更深入的设计文档（`docs/00`–`docs/06`）目前仍为中文。
+更深入的设计文档（`docs/00`–`docs/06`，含架构决策记录与基准报告）已全部为英文。
 
 ---
 

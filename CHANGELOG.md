@@ -40,6 +40,6 @@ All notable changes are documented here. The format follows
 
 - Native AOT size delta is 432.7 KB, above the release target. Removing
   `System.Text.Json` cut it from 605.0 KB; the remaining gap requires a minimal
-  profile planned for V1.1. See `docs/benchmarks/M8-基准报告.md`.
+  profile planned for V1.1. See `docs/benchmarks/M8-benchmark-report.md`.
 - MCP stdio processes requests sequentially and does not yet honor
   `notifications/cancelled`.

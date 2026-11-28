@@ -157,7 +157,7 @@ See [configuration and errors](docs/errors.md) for the full contract.
 | Native AOT size delta | ≤ 100 KB target, 150 KB fail threshold | 432.7 KB (known limitation, V1.1) |
 
 The AOT size gap is documented in the
-[M8 benchmark report](docs/benchmarks/M8-基准报告.md). `System.Text.Json` was removed in
+[M8 benchmark report](docs/benchmarks/M8-benchmark-report.md). `System.Text.Json` was removed in
 1.0.0; the remaining delta is native code and reachable framework members rather than
 embedded strings. A minimal profile is planned for V1.1.
 
@@ -181,13 +181,18 @@ See [CHANGELOG.md](CHANGELOG.md) and [release process](docs/release.md).
 | Document | Contents |
 |---|---|
 | [Quickstart](docs/quickstart.md) | Install, declare commands, configuration, MCP, AOT |
+| [Research and opportunity analysis](docs/00-research-and-opportunity.md) | Competitive landscape, market gap, positioning |
+| [Product requirements](docs/01-product-requirements.md) | Goals, personas, requirements, non-functional targets |
+| [Technical design](docs/02-technical-design.md) | Packages, compile-time model, generator pipeline, runtime, artifacts |
+| [Implementation plan](docs/03-implementation-plan.md) | Milestones, task breakdown, dependencies |
+| [Acceptance checklist](docs/04-acceptance-checklist.md) | Acceptance criteria and quality gates |
+| [Architecture decisions](docs/05-architecture-decisions.md) | ADR-001 to ADR-016 |
+| [Decision log](docs/06-decisions.md) | Closed naming, licensing, and scope decisions |
 | [Migration guide](docs/migration.md) | From System.CommandLine, Spectre.Console.Cli, ConsoleAppFramework, hand-written `Main` |
 | [Error codes](docs/errors.md) | Runtime `RHL_*` codes, `RHLxxx` diagnostics, exit codes |
 | [Release process](docs/release.md) | Versioning, trusted publishing, rollback, supply chain |
-| [Benchmarks](docs/benchmarks/M8-基准报告.md) | M0–M8 performance, AOT, packaging reports |
+| [Benchmarks](docs/benchmarks/M8-benchmark-report.md) | M0–M8 performance, AOT, packaging reports |
 | [Chinese README](README.zh-CN.md) | 中文说明（副文档） |
-
-The deeper design documents (`docs/00`–`docs/06`) are currently written in Chinese.
 
 ---
 
