@@ -7,5 +7,43 @@
     <IsTrimmable>true</IsTrimmable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
+
+    <Version>1.0.0</Version>
+    <PackageId>RunesHela</PackageId>
+    <Title>RunesHela</Title>
+    <Authors>karlmoriaty</Authors>
+    <Description>Compile-time CLI framework for .NET: declare commands once and generate parsing, binding, help, completion, man pages, JSON Schema, and MCP tools with zero reflection and zero third-party runtime dependencies.</Description>
+    <PackageTags>cli;command-line;source-generator;aot;agent;mcp</PackageTags>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/karlmoriaty/RunesHela</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/karlmoriaty/RunesHela.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>Initial 1.0.0 release.</PackageReleaseNotes>
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="RunesHela.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RunesHela.Generator\RunesHela.Generator.csproj"
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="all" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\NOTICE" Pack="true" PackagePath="\" />
+    <None Include="$(MSBuildThisFileDirectory)..\RunesHela.Generator\bin\$(Configuration)\netstandard2.0\RunesHela.Generator.dll"
+          Pack="true"
+          PackagePath="analyzers/dotnet/cs"
+          Visible="false" />
+  </ItemGroup>
 </Project>

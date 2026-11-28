@@ -35,6 +35,99 @@ jobs:
       - name: Test performance budgets
         run: dotnet test tests/RunesHela.Performance.Tests/RunesHela.Performance.Tests.csproj -c Release --no-build
 
+  pack:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore RunesHela.slnx
+
+      - name: Build
+        run: dotnet build RunesHela.slnx -c Release --no-restore -m:1
+
+      - name: Pack
+        run: dotnet pack src/RunesHela/RunesHela.csproj -c Release --no-build -o artifacts/packages -p:ContinuousIntegrationBuild=true
+
+      - name: Verify package contents
+        run: |
+          python3 - <<'PY'
+          import glob
+          import sys
+          import zipfile
+
+          package = glob.glob("artifacts/packages/*.nupkg")[0]
+          required = {
+              "lib/net10.0/RunesHela.dll",
+              "lib/net10.0/RunesHela.xml",
+              "analyzers/dotnet/cs/RunesHela.Generator.dll",
+              "README.md",
+              "NOTICE",
+          }
+
+          with zipfile.ZipFile(package) as archive:
+              names = set(archive.namelist())
+
+          missing = sorted(required - names)
+          if missing:
+              print("Missing package entries: " + ", ".join(missing))
+              sys.exit(1)
+
+          print("Package contents verified: " + package)
+          PY
+
+      - name: Consumer smoke test
+        run: |
+          mkdir -p /tmp/runeshela-consumer
+          cd /tmp/runeshela-consumer
+          dotnet new console -n Consumer -o . --force > /dev/null
+          dotnet add package RunesHela --version 1.0.0 --source "$GITHUB_WORKSPACE/artifacts/packages" > /dev/null
+          cat > Program.cs <<'CS'
+          using RunesHela;
+
+          return RunesHelaApp.Run(args);
+
+          [Command("greet", Description = "Greets.")]
+          public sealed class GreetCommand
+          {
+              [Argument(0, Description = "Name.")]
+              public string Name { get; init; } = "world";
+
+              [Option(Description = "Uppercase.")]
+              public bool Loud { get; init; }
+
+              public void Run()
+              {
+                  var text = "Hello, " + Name + "!";
+                  System.Console.WriteLine(Loud ? text.ToUpperInvariant() : text);
+              }
+          }
+          CS
+          dotnet run -c Release -- greet Ada --loud | grep -q "HELLO, ADA!"
+
+      - name: Generate SBOM
+        run: |
+          for package in artifacts/packages/*.nupkg; do
+            python3 build/generate-sbom.py "$package" artifacts/sbom
+          done
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: |
+            artifacts/packages/*
+            artifacts/sbom/*
+          if-no-files-found: error
+
   perf:
     runs-on: ubuntu-latest
     steps:

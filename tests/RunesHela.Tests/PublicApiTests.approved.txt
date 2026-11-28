@@ -1,0 +1,182 @@
+type class RunesHela.ArgumentAttribute : System.Attribute []
+  ctor Void .ctor(Int32)
+  property System.Boolean Required {get;set;}
+  property System.Int32 Position {get;}
+  property System.String Description {get;set;}
+  property System.String Name {get;set;}
+type class RunesHela.CommandAttribute : System.Attribute []
+  ctor Void .ctor()
+  ctor Void .ctor(System.String)
+  property System.Boolean IsDestructive {get;set;}
+  property System.Boolean IsHidden {get;set;}
+  property System.String Description {get;set;}
+  property System.String Name {get;}
+  property System.String[] Aliases {get;set;}
+  property System.String[] Filters {get;set;}
+type class RunesHela.CommandContext : System.Object []
+  ctor Void .ctor()
+  property System.IServiceProvider Services {get;set;}
+  property System.String CommandPath {get;set;}
+  property System.Threading.CancellationToken CancellationToken {get;set;}
+type class RunesHela.ErrorOutput : System.Object []
+  method Int32 Write(RunesHela.RunesHelaError, Boolean)
+type interface RunesHela.IConsole : - []
+  property System.Boolean IsAnsiSupported {get;}
+  property System.Boolean IsOutputRedirected {get;}
+  property System.IO.TextWriter Error {get;}
+  property System.IO.TextWriter Out {get;}
+type interface RunesHela.IInteractiveConsole : - [RunesHela.IConsole]
+  property System.Boolean IsInputRedirected {get;}
+  property System.IO.TextReader In {get;}
+type interface RunesHela.IRunesHelaFilter : - []
+  method System.Threading.Tasks.ValueTask`1[System.Int32] InvokeAsync(RunesHela.CommandContext, System.Func`2[RunesHela.CommandContext,System.Threading.Tasks.ValueTask`1[System.Int32]])
+type class RunesHela.LengthAttribute : System.Attribute []
+  ctor Void .ctor(Int32)
+  ctor Void .ctor(Int32, Int32)
+  property System.Int32 Max {get;}
+  property System.Int32 Min {get;}
+type class RunesHela.OptionAttribute : System.Attribute []
+  ctor Void .ctor()
+  ctor Void .ctor(System.String)
+  property System.Boolean Hidden {get;set;}
+  property System.Boolean Required {get;set;}
+  property System.Char Short {get;set;}
+  property System.String Config {get;set;}
+  property System.String Description {get;set;}
+  property System.String Env {get;set;}
+  property System.String Name {get;}
+  property System.String ValueName {get;set;}
+  property System.String[] Aliases {get;set;}
+type struct RunesHela.Parsing.CommandLineReader : System.ValueType []
+  ctor Void .ctor(System.ReadOnlySpan`1[System.String])
+  method Boolean TryRead(RunesHela.Parsing.CommandLineToken ByRef)
+  method Boolean TryReadValue(System.ReadOnlyMemory`1[System.Char] ByRef)
+type struct RunesHela.Parsing.CommandLineToken : System.ValueType []
+  method RunesHela.Parsing.CommandLineToken Option(System.ReadOnlySpan`1[System.Char], System.ReadOnlySpan`1[System.Char], Boolean, Int32)
+  method RunesHela.Parsing.CommandLineToken Positional(System.ReadOnlySpan`1[System.Char], System.String)
+  method RunesHela.Parsing.CommandLineToken Terminator()
+  property RunesHela.Parsing.CommandLineTokenKind Kind {get;}
+  property System.Boolean HasValue {get;}
+  property System.Int32 PrefixLength {get;}
+  property System.ReadOnlySpan`1[System.Char] Name {get;}
+  property System.ReadOnlySpan`1[System.Char] Value {get;}
+  property System.String Source {get;}
+type enum RunesHela.Parsing.CommandLineTokenKind : System.Enum [System.IComparable, System.IConvertible, System.IFormattable, System.ISpanFormattable]
+  field RunesHela.Parsing.CommandLineTokenKind Option
+  field RunesHela.Parsing.CommandLineTokenKind Positional
+  field RunesHela.Parsing.CommandLineTokenKind Terminator
+  field System.Int32 value__
+type class RunesHela.Parsing.SpanText : System.Object []
+  method System.String ToString(System.ReadOnlyMemory`1[System.Char])
+type class RunesHela.Parsing.ValueParser : System.Object []
+  method Boolean TryParseString[T](System.String, T ByRef)
+  method Boolean TryParse[T](System.ReadOnlySpan`1[System.Char], T ByRef)
+type class RunesHela.RangeAttribute : System.Attribute []
+  ctor Void .ctor(Double, Double)
+  ctor Void .ctor(Int64, Int64)
+  property System.Double Max {get;}
+  property System.Double Min {get;}
+type class RunesHela.RegexAttribute : System.Attribute []
+  ctor Void .ctor(System.String)
+  property System.String Pattern {get;}
+type class RunesHela.RequiredAttribute : System.Attribute []
+  ctor Void .ctor()
+type class RunesHela.RunesHelaApp : System.Object []
+  method Int32 Run()
+  method Int32 Run(System.String[])
+  method Int32 Run(System.String[], System.IServiceProvider)
+  method System.String GetVersion()
+  method System.Threading.Tasks.ValueTask`1[System.Int32] RunAsync(System.String[], System.IServiceProvider, System.Threading.CancellationToken)
+  method System.Threading.Tasks.ValueTask`1[System.Int32] RunAsync(System.String[], System.Threading.CancellationToken)
+  method Void RegisterEntry(System.Func`4[System.String[],System.IServiceProvider,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask`1[System.Int32]])
+type class RunesHela.RunesHelaConfigFileAttribute : System.Attribute []
+  ctor Void .ctor()
+  ctor Void .ctor(System.String)
+  property System.String FileName {get;}
+type class RunesHela.RunesHelaConfiguration : System.Object []
+  method Boolean TryGetValue(System.String, System.String ByRef)
+  method Boolean TryGetValues(System.String, System.String[] ByRef)
+  method RunesHela.RunesHelaConfiguration Load(System.String, System.String, Boolean, System.String, System.String)
+  property System.Int32 ExitCode {get;set;}
+  property System.String ExplicitPath {get;}
+  property System.String Path {get;set;}
+type class RunesHela.RunesHelaConsole : System.Object []
+  property RunesHela.IConsole Current {get;set;}
+  property RunesHela.IInteractiveConsole Interactive {get;set;}
+type class RunesHela.RunesHelaEnvironment : System.Object []
+  method Boolean TryParseBoolean(System.String, Boolean ByRef)
+type class RunesHela.RunesHelaError : System.Object []
+  ctor Void .ctor()
+  property System.Collections.Generic.IReadOnlyList`1[System.String] NextSteps {get;set;}
+  property System.Int32 ExitCode {get;set;}
+  property System.String Code {get;set;}
+  property System.String CommandPath {get;set;}
+  property System.String DocsUrl {get;set;}
+  property System.String Hint {get;set;}
+  property System.String Message {get;set;}
+type class RunesHela.RunesHelaErrorCodes : System.Object []
+  field System.String Aborted
+  field System.String ConfigInvalid
+  field System.String ConfigInvalidValue
+  field System.String ConfigNotFound
+  field System.String ConfirmationRequired
+  field System.String InvalidValue
+  field System.String MissingRequired
+  field System.String MissingValue
+  field System.String NotImplemented
+  field System.String ServiceMissing
+  field System.String ServicesMissing
+  field System.String UnexpectedArgument
+  field System.String UnexpectedError
+  field System.String UnknownCommand
+  field System.String UnknownOption
+  field System.String UnknownShell
+  field System.String UnsupportedFormat
+  field System.String ValidationFailed
+type class RunesHela.RunesHelaErrors : System.Object []
+  method Int32 Aborted(System.String, Boolean)
+  method Int32 ConfigInvalid(System.String, System.String, Boolean, System.String)
+  method Int32 ConfigInvalidValue(System.String, System.String, System.String, Boolean, System.String)
+  method Int32 ConfigNotFound(System.String, Boolean, System.String)
+  method Int32 ConfirmationRequired(System.String, Boolean)
+  method Int32 InvalidArgumentValue(System.String, System.String, System.String, System.String, Boolean)
+  method Int32 InvalidValue(System.String, System.String, System.String, System.String, Boolean)
+  method Int32 MissingRequiredArgument(System.String, System.String, Boolean)
+  method Int32 MissingRequiredOption(System.String, System.String, System.String, Boolean)
+  method Int32 MissingValue(System.String, System.String, Boolean)
+  method Int32 NotImplemented(System.String, Boolean)
+  method Int32 ServiceMissing(System.String, System.String, Boolean)
+  method Int32 ServicesMissing(System.String, Boolean)
+  method Int32 Unexpected(System.Exception, Boolean, Boolean)
+  method Int32 UnexpectedArgument(System.String, System.String, Boolean)
+  method Int32 UnknownCommand(System.String, System.String, Boolean, System.String[])
+  method Int32 UnknownOption(System.String, System.String, Boolean, System.String[])
+  method Int32 UnknownShell(System.String, Boolean)
+  method Int32 UnknownSubcommand(System.String, System.String, Boolean, System.String[])
+  method Int32 UnsupportedFormat(System.String, System.String, Boolean)
+  method Int32 ValidationFailed(System.String, System.String, System.String, Boolean)
+type class RunesHela.RunesHelaExitCode : System.Object []
+  field System.Int32 BrokenPipe
+  field System.Int32 Configuration
+  field System.Int32 Conflict
+  field System.Int32 Failure
+  field System.Int32 Interrupted
+  field System.Int32 NotFound
+  field System.Int32 Permission
+  field System.Int32 Success
+  field System.Int32 Timeout
+  field System.Int32 Usage
+type class RunesHela.RunesHelaGuard : System.Object []
+  method Int32 EnsureConfirmed(System.String, Boolean, Boolean, Boolean)
+type class RunesHela.RunesHelaMcpServer : System.Object []
+  method Int32 Run(System.String, System.String, System.String, System.IO.TextReader, System.IO.TextWriter, System.Func`2[System.String[],System.Int32])
+type class RunesHela.RunesHelaOutputOptions : System.Object []
+  method Boolean IsGlobalFlag(System.ReadOnlySpan`1[System.Char])
+  method Boolean IsSupportedFormat(System.ReadOnlySpan`1[System.Char])
+  method Boolean WantsHelp(System.ReadOnlySpan`1[System.String])
+  method Boolean WantsJson(System.ReadOnlySpan`1[System.String])
+  method Boolean WantsNoInput(System.ReadOnlySpan`1[System.String])
+  method Boolean WantsVerbose(System.ReadOnlySpan`1[System.String])
+  method Boolean WantsYes(System.ReadOnlySpan`1[System.String])
+type class RunesHela.SecretAttribute : System.Attribute []
+  ctor Void .ctor()

@@ -1,10 +1,8 @@
-using System.Text.Json;
-
 namespace RunesHela;
 
 /// <summary>
 /// Loads JSON configuration values used by generated command binders.
-/// Parsing uses <see cref="JsonDocument"/> and never reflection, so it stays Native AOT compatible.
+/// Parsing uses the built-in <see cref="JsonParser"/> and never reflection, so it stays Native AOT compatible.
 /// </summary>
 public sealed class RunesHelaConfiguration
 {
@@ -142,19 +140,15 @@ public sealed class RunesHelaConfiguration
         try
         {
             using var stream = File.OpenRead(file);
-            using var document = JsonDocument.Parse(stream, new JsonDocumentOptions
-            {
-                AllowTrailingCommas = true,
-                CommentHandling = JsonCommentHandling.Skip,
-            });
+            var root = JsonParser.Parse(stream);
 
-            if (document.RootElement.ValueKind != JsonValueKind.Object)
+            if (root.Kind != JsonKind.Object)
             {
                 ExitCode = RunesHelaErrors.ConfigInvalid(file, "the root value must be a JSON object.", json, command);
                 return;
             }
 
-            if (!Flatten(document.RootElement, string.Empty, file, json, command))
+            if (!Flatten(root, string.Empty, file, json, command))
             {
                 return;
             }
@@ -162,13 +156,13 @@ public sealed class RunesHelaConfiguration
             Path = file;
             WarnIfInsecure(file);
         }
-        catch (JsonException exception)
+        catch (JsonParseException exception)
         {
-            var position = exception.LineNumber is null
-                ? string.Empty
-                : " at line " + (exception.LineNumber.Value + 1) + ", position " + (exception.BytePositionInLine.GetValueOrDefault() + 1);
-
-            ExitCode = RunesHelaErrors.ConfigInvalid(file, "the JSON could not be parsed" + position + ".", json, command);
+            ExitCode = RunesHelaErrors.ConfigInvalid(
+                file,
+                "the JSON could not be parsed at line " + exception.Line + ", column " + exception.Column + ".",
+                json,
+                command);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or NotSupportedException or ArgumentException)
         {
@@ -196,84 +190,57 @@ public sealed class RunesHelaConfiguration
         return File.Exists(user) ? user : null;
     }
 
-    private bool Flatten(JsonElement element, string prefix, string file, bool json, string? command)
+    private bool Flatten(JsonValue element, string prefix, string file, bool json, string? command)
     {
-        foreach (var property in element.EnumerateObject())
+        foreach (var property in element.Properties!)
         {
-            var key = prefix.Length == 0 ? property.Name : prefix + "." + property.Name;
+            var key = prefix.Length == 0 ? property.Key : prefix + "." + property.Key;
+            var value = property.Value;
 
-            switch (property.Value.ValueKind)
+            switch (value.Kind)
             {
-                case JsonValueKind.Object:
-                    if (!Flatten(property.Value, key, file, json, command))
+                case JsonKind.Object:
+                    if (!Flatten(value, key, file, json, command))
                     {
                         return false;
                     }
 
                     break;
 
-                case JsonValueKind.Array:
-                    if (!AddArray(property.Value, key, file, json, command))
+                case JsonKind.Array:
+                    if (!AddArray(value, key, file, json, command))
                     {
                         return false;
                     }
 
                     break;
 
-                case JsonValueKind.String:
-                    _values[key] = property.Value.GetString() ?? string.Empty;
+                case JsonKind.String:
+                case JsonKind.Number:
+                case JsonKind.Boolean:
+                    _values[key] = value.Text;
                     break;
 
-                case JsonValueKind.Number:
-                    _values[key] = property.Value.GetRawText();
+                case JsonKind.Null:
                     break;
-
-                case JsonValueKind.True:
-                    _values[key] = "true";
-                    break;
-
-                case JsonValueKind.False:
-                    _values[key] = "false";
-                    break;
-
-                case JsonValueKind.Null:
-                    break;
-
-                default:
-                    ExitCode = RunesHelaErrors.ConfigInvalid(
-                        file,
-                        "key '" + key + "' has an unsupported value.",
-                        json,
-                        command);
-                    return false;
             }
         }
 
         return true;
     }
 
-    private bool AddArray(JsonElement element, string key, string file, bool json, string? command)
+    private bool AddArray(JsonValue element, string key, string file, bool json, string? command)
     {
         var items = new List<string>();
 
-        foreach (var item in element.EnumerateArray())
+        foreach (var item in element.Items!)
         {
-            switch (item.ValueKind)
+            switch (item.Kind)
             {
-                case JsonValueKind.String:
-                    items.Add(item.GetString() ?? string.Empty);
-                    break;
-
-                case JsonValueKind.Number:
-                    items.Add(item.GetRawText());
-                    break;
-
-                case JsonValueKind.True:
-                    items.Add("true");
-                    break;
-
-                case JsonValueKind.False:
-                    items.Add("false");
+                case JsonKind.String:
+                case JsonKind.Number:
+                case JsonKind.Boolean:
+                    items.Add(item.Text);
                     break;
 
                 default:

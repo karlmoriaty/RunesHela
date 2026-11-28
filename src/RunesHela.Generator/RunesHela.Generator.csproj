@@ -15,6 +15,7 @@
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <IsPackable>false</IsPackable>
     <NoWarn>$(NoWarn);RS2008</NoWarn>
   </PropertyGroup>
 

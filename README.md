@@ -1,7 +1,7 @@
 # RunesHela · 设计文档集
 
 > **项目名称**：RunesHela（已选定，2026-11-26；见 [06 决策记录](./docs/06-决策记录.md) D-06）
-> **状态**：**M7 已完成（2026-11-28）**，下一步 M8（发布与社区）
+> **状态**：**M8 已完成（2026-11-28）**，V1.0.0 发布就绪
 > **日期**：2026-11-28
 
 ---
@@ -127,6 +127,15 @@ app greet --help --json
 - **零依赖**：JSON-RPC 与参数映射使用 BCL `JsonDocument` + 手写 JSON 输出，无第三方 MCP SDK。
 - **AOT**：三平台冒烟新增 `mcp --manifest`；体积增量 605.0 KB（较 M6 +44.3 KB），启动增量 0.04 ms，体积仍为 M8 技术债。
 
+### M8 已具备的能力（发布与社区）
+
+- **单包发布**：`RunesHela` 一个 NuGet 包内含运行时、XML 文档与 `analyzers/dotnet/cs` 生成器；同时产出 `.snupkg` 符号包。
+- **版本与兼容**：SemVer 1.0.0；公共 API 基线测试（`PublicApiTests.approved.txt`）阻止无意识破坏；CHANGELOG 记录能力与已知限制。
+- **供应链**：SourceLink + 确定性构建；SPDX 2.3 SBOM（`build/generate-sbom.py`）；包内容校验与 NuGet 消费端冒烟测试。
+- **治理**：Apache-2.0 LICENSE、NOTICE、SECURITY.md、CODEOWNERS、CONTRIBUTING.md、DCO 工作流；`release` 工作流使用 NuGet OIDC 可信发布与 `release` 环境审批。
+- **文档**：Quickstart、迁移指南、发布与回滚流程、错误码、M0–M8 基准报告。
+- **AOT 优化**：运行时移除 `System.Text.Json`，配置与 MCP 改用内置最小 JSON 解析/写入器；体积增量见 M8 报告。
+
 ---
 
 ## 文档地图
@@ -147,7 +156,9 @@ app greet --help --json
 | 11 | [M5 基准报告](./docs/benchmarks/M5-基准报告.md) | 四 shell 补全、动态补全、Man/Markdown、产物一致性 | 开发/评审 | ✅ M5 通过 |
 | 12 | [M6 基准报告](./docs/benchmarks/M6-基准报告.md) | 配置优先级、JSON/ENV、Schema、脱敏与零分配快路径 | 开发/评审 | ✅ M6 通过 |
 | 13 | [M7 基准报告](./docs/benchmarks/M7-基准报告.md) | MCP Manifest、stdio JSON-RPC、工具调用与注解 | 开发/评审 | ✅ M7 通过 |
-| 14 | [错误码与诊断](./docs/errors.md) | 运行时 `RHL_*` 错误码、`RHLxxx` 诊断码、退出码矩阵 | 开发/使用 | ✅ 随 M7 更新 |
+| 14 | [M8 基准报告](./docs/benchmarks/M8-基准报告.md) | 打包、许可/治理、公共 API 基线、AOT 优化 | 开发/评审 | ✅ M8 通过 |
+| 15 | [错误码与诊断](./docs/errors.md) | 运行时 `RHL_*` 错误码、`RHLxxx` 诊断码、退出码矩阵 | 开发/使用 | ✅ 随 M8 更新 |
+| 16 | [快速开始](./docs/quickstart.md) / [迁移指南](./docs/migration.md) / [发布流程](./docs/release.md) | 上手、迁移映射、发布与回滚 | 使用/维护 | ✅ 完成 |
 
 ---
 
@@ -210,7 +221,7 @@ app greet --help --json
 
 ## 边界声明
 
-- 当前已完成 **M7**（2026-11-28）：MCP Manifest 与 stdio JSON-RPC server（零第三方依赖）；下一步 M8（发布与社区）。
+- 当前已完成 **M8**（2026-11-28）：单包打包、公共 API 基线与发布流水线、许可/治理、Quickstart/迁移/发布文档；V1.0.0 发布就绪。
 - 以上决议已按你的选择写入文档；项目已按决议进入开发。
 
 ---

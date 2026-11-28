@@ -1,0 +1,96 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Package version (SemVer, without a leading v)
+        required: true
+        default: 1.0.0
+      dry_run:
+        description: Build and validate without publishing
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore RunesHela.slnx
+
+      - name: Build
+        run: dotnet build RunesHela.slnx -c Release --no-restore -m:1
+
+      - name: Test
+        run: |
+          dotnet test tests/RunesHela.Tests/RunesHela.Tests.csproj -c Release --no-build
+          dotnet test tests/RunesHela.Generator.Tests/RunesHela.Generator.Tests.csproj -c Release --no-build
+          dotnet test tests/RunesHela.Integration.Tests/RunesHela.Integration.Tests.csproj -c Release --no-build
+          dotnet test tests/RunesHela.Performance.Tests/RunesHela.Performance.Tests.csproj -c Release --no-build
+
+      - name: Pack
+        run: |
+          dotnet pack src/RunesHela/RunesHela.csproj -c Release --no-build \
+            -o artifacts/packages \
+            -p:Version=${{ inputs.version }} \
+            -p:ContinuousIntegrationBuild=true
+
+      - name: Generate SBOM
+        run: |
+          for package in artifacts/packages/*.nupkg; do
+            python3 build/generate-sbom.py "$package" artifacts/sbom
+          done
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ inputs.version }}
+          path: |
+            artifacts/packages/*
+            artifacts/sbom/*
+          if-no-files-found: error
+
+      - name: NuGet login
+        if: ${{ !inputs.dry_run }}
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Publish to NuGet
+        if: ${{ !inputs.dry_run }}
+        run: |
+          for package in artifacts/packages/*.nupkg; do
+            dotnet nuget push "$package" \
+              --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" \
+              --source https://api.nuget.org/v3/index.json \
+              --skip-duplicate
+          done
+
+      - name: Create GitHub release
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ inputs.version }}" \
+            artifacts/packages/*.nupkg \
+            artifacts/packages/*.snupkg \
+            artifacts/sbom/* \
+            --title "RunesHela ${{ inputs.version }}" \
+            --generate-notes

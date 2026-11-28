@@ -1,5 +1,4 @@
 using System.Text;
-using System.Text.Json;
 
 namespace RunesHela;
 
@@ -28,20 +27,19 @@ public static class RunesHelaMcpServer
         TextWriter output,
         Func<string[], int> invoke)
     {
-        using var document = JsonDocument.Parse(manifestJson);
-        var root = document.RootElement;
-        var toolsJson = "[]";
-        var tools = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+        var manifest = JsonParser.Parse(manifestJson);
+        var tools = new Dictionary<string, JsonValue>(StringComparer.Ordinal);
+        var toolsElement = JsonValue.Array(new List<JsonValue>());
 
-        if (root.TryGetProperty("tools", out var toolsElement) && toolsElement.ValueKind == JsonValueKind.Array)
+        if (manifest.TryGetProperty("tools", out var manifestTools) && manifestTools.Kind == JsonKind.Array)
         {
-            toolsJson = toolsElement.GetRawText();
+            toolsElement = manifestTools;
 
-            foreach (var tool in toolsElement.EnumerateArray())
+            foreach (var tool in manifestTools.Items!)
             {
-                if (tool.TryGetProperty("name", out var name) && name.ValueKind == JsonValueKind.String)
+                if (tool.TryGetProperty("name", out var name) && name.Kind == JsonKind.String)
                 {
-                    tools[name.GetString()!] = tool;
+                    tools[name.Text] = tool;
                 }
             }
         }
@@ -60,7 +58,7 @@ public static class RunesHelaMcpServer
                 continue;
             }
 
-            var response = HandleMessage(line, tools, toolsJson, appName, version, invoke);
+            var response = HandleMessage(line, tools, toolsElement, appName, version, invoke);
 
             if (response.Length == 0)
             {
@@ -74,112 +72,112 @@ public static class RunesHelaMcpServer
 
     private static string HandleMessage(
         string line,
-        Dictionary<string, JsonElement> tools,
-        string toolsJson,
+        Dictionary<string, JsonValue> tools,
+        JsonValue toolsElement,
         string appName,
         string version,
         Func<string[], int> invoke)
     {
-        JsonDocument request;
+        JsonValue root;
 
         try
         {
-            request = JsonDocument.Parse(line);
+            root = JsonParser.Parse(line);
         }
-        catch (JsonException)
+        catch (JsonParseException)
         {
             return Error(null, -32700, "Parse error");
         }
 
-        using (request)
+        if (root.Kind != JsonKind.Object)
         {
-            var root = request.RootElement;
+            return Error(null, -32600, "Invalid Request");
+        }
 
-            if (root.ValueKind != JsonValueKind.Object)
+        JsonValue? id = null;
+
+        if (root.TryGetProperty("id", out var idElement) && idElement.Kind != JsonKind.Null)
+        {
+            id = idElement;
+        }
+
+        if (!root.TryGetProperty("method", out var methodElement) || methodElement.Kind != JsonKind.String)
+        {
+            return id is null ? string.Empty : Error(id, -32600, "Invalid Request");
+        }
+
+        var method = methodElement.Text;
+
+        switch (method)
+        {
+            case "initialize":
             {
-                return Error(null, -32600, "Invalid Request");
-            }
+                var protocol = DefaultProtocolVersion;
 
-            var hasId = root.TryGetProperty("id", out var idElement) && idElement.ValueKind != JsonValueKind.Null;
-            var id = hasId ? idElement.GetRawText() : null;
-
-            if (!root.TryGetProperty("method", out var methodElement) || methodElement.ValueKind != JsonValueKind.String)
-            {
-                return hasId ? Error(id, -32600, "Invalid Request") : string.Empty;
-            }
-
-            var method = methodElement.GetString()!;
-
-            switch (method)
-            {
-                case "initialize":
+                if (root.TryGetProperty("params", out var parameters) &&
+                    parameters.Kind == JsonKind.Object &&
+                    parameters.TryGetProperty("protocolVersion", out var requested) &&
+                    requested.Kind == JsonKind.String)
                 {
-                    var protocol = DefaultProtocolVersion;
-
-                    if (root.TryGetProperty("params", out var parameters) &&
-                        parameters.ValueKind == JsonValueKind.Object &&
-                        parameters.TryGetProperty("protocolVersion", out var requested) &&
-                        requested.ValueKind == JsonValueKind.String)
-                    {
-                        protocol = requested.GetString()!;
-                    }
-
-                    var result = "{\"protocolVersion\":" + Quote(protocol)
-                        + ",\"capabilities\":{\"tools\":{\"listChanged\":false}}"
-                        + ",\"serverInfo\":{\"name\":" + Quote(appName)
-                        + ",\"version\":" + Quote(version) + "}}";
-
-                    return hasId ? Result(id, result) : string.Empty;
+                    protocol = requested.Text;
                 }
 
-                case "notifications/initialized":
-                    return string.Empty;
+                var result = "{\"protocolVersion\":" + Quote(protocol)
+                    + ",\"capabilities\":{\"tools\":{\"listChanged\":false}}"
+                    + ",\"serverInfo\":{\"name\":" + Quote(appName)
+                    + ",\"version\":" + Quote(version) + "}}";
 
-                case "ping":
-                    return hasId ? Result(id, "{}") : string.Empty;
-
-                case "tools/list":
-                    return hasId ? Result(id, "{\"tools\":" + toolsJson + "}") : string.Empty;
-
-                case "tools/call":
-                {
-                    var response = CallTool(id, root, tools, invoke);
-                    return hasId ? response : string.Empty;
-                }
-
-                default:
-                    return hasId ? Error(id, -32601, "Method not found: " + method) : string.Empty;
+                return id is null ? string.Empty : Result(id, result);
             }
+
+            case "notifications/initialized":
+                return string.Empty;
+
+            case "ping":
+                return id is null ? string.Empty : Result(id, "{}");
+
+            case "tools/list":
+                return id is null
+                    ? string.Empty
+                    : Result(id, "{\"tools\":" + JsonWriter.ToJson(toolsElement) + "}");
+
+            case "tools/call":
+            {
+                var response = CallTool(id, root, tools, invoke);
+                return id is null ? string.Empty : response;
+            }
+
+            default:
+                return id is null ? string.Empty : Error(id, -32601, "Method not found: " + method);
         }
     }
 
     private static string CallTool(
-        string? id,
-        JsonElement root,
-        Dictionary<string, JsonElement> tools,
+        JsonValue? id,
+        JsonValue root,
+        Dictionary<string, JsonValue> tools,
         Func<string[], int> invoke)
     {
-        if (!root.TryGetProperty("params", out var parameters) || parameters.ValueKind != JsonValueKind.Object)
+        if (!root.TryGetProperty("params", out var parameters) || parameters.Kind != JsonKind.Object)
         {
             return Error(id, -32602, "Missing tool parameters.");
         }
 
-        if (!parameters.TryGetProperty("name", out var nameElement) || nameElement.ValueKind != JsonValueKind.String)
+        if (!parameters.TryGetProperty("name", out var nameElement) || nameElement.Kind != JsonKind.String)
         {
             return Error(id, -32602, "Missing tool name.");
         }
 
-        var name = nameElement.GetString()!;
+        var name = nameElement.Text;
 
         if (!tools.TryGetValue(name, out var tool))
         {
             return Error(id, -32602, "Unknown tool '" + name + "'.");
         }
 
-        var arguments = default(JsonElement);
+        var arguments = JsonValue.Object(new Dictionary<string, JsonValue>(StringComparer.Ordinal));
 
-        if (parameters.TryGetProperty("arguments", out var argumentsElement) &&
-            argumentsElement.ValueKind == JsonValueKind.Object)
+        if (parameters.TryGetProperty("arguments", out var argumentsElement) && argumentsElement.Kind == JsonKind.Object)
         {
             arguments = argumentsElement;
         }
@@ -194,26 +192,26 @@ public static class RunesHelaMcpServer
     }
 
     private static bool TryBuildArguments(
-        JsonElement tool,
-        JsonElement arguments,
+        JsonValue tool,
+        JsonValue arguments,
         out string[] args,
         out string? error)
     {
         error = null;
         var command = new List<string>();
 
-        if (tool.TryGetProperty("x-runeshela-path", out var pathElement) &&
-            pathElement.ValueKind == JsonValueKind.String)
+        if (tool.TryGetProperty("x-runeshela-path", out var pathElement) && pathElement.Kind == JsonKind.String)
         {
-            foreach (var part in pathElement.GetString()!.Split(' '))
+            foreach (var part in pathElement.Text.Split(' '))
             {
                 command.Add(part);
             }
         }
 
         if (!tool.TryGetProperty("inputSchema", out var schema) ||
+            schema.Kind != JsonKind.Object ||
             !schema.TryGetProperty("properties", out var properties) ||
-            properties.ValueKind != JsonValueKind.Object)
+            properties.Kind != JsonKind.Object)
         {
             args = command.ToArray();
             return true;
@@ -222,51 +220,46 @@ public static class RunesHelaMcpServer
         var positionals = new List<Positional>();
         var options = new List<string>();
 
-        if (arguments.ValueKind == JsonValueKind.Object)
+        foreach (var argument in arguments.Properties!)
         {
-            foreach (var argument in arguments.EnumerateObject())
+            if (!properties.TryGetProperty(argument.Key, out var propertySchema))
             {
-                if (!properties.TryGetProperty(argument.Name, out var propertySchema))
+                error = "Unknown argument '" + argument.Key + "'.";
+                args = Array.Empty<string>();
+                return false;
+            }
+
+            if (propertySchema.TryGetProperty("x-runeshela-position", out var positionElement) &&
+                positionElement.TryGetInt32(out var position))
+            {
+                if (!TryAddPositionals(argument.Key, argument.Value, position, positionals, out error))
                 {
-                    error = "Unknown argument '" + argument.Name + "'.";
                     args = Array.Empty<string>();
                     return false;
                 }
 
-                if (propertySchema.TryGetProperty("x-runeshela-position", out var positionElement) &&
-                    positionElement.TryGetInt32(out var position))
-                {
-                    if (!TryAddPositionals(argument.Name, argument.Value, position, positionals, out error))
-                    {
-                        args = Array.Empty<string>();
-                        return false;
-                    }
+                continue;
+            }
 
-                    continue;
+            if (propertySchema.TryGetProperty("x-runeshela-option", out var optionElement) &&
+                optionElement.Kind == JsonKind.String)
+            {
+                if (!TryAddOption(argument.Key, optionElement.Text, argument.Value, propertySchema, options, out error))
+                {
+                    args = Array.Empty<string>();
+                    return false;
                 }
 
-                if (propertySchema.TryGetProperty("x-runeshela-option", out var optionElement) &&
-                    optionElement.ValueKind == JsonValueKind.String)
+                continue;
+            }
+
+            if (propertySchema.TryGetProperty("x-runeshela-global", out var globalElement) &&
+                globalElement.Kind == JsonKind.String &&
+                globalElement.Text == "yes")
+            {
+                if (argument.Value.Kind == JsonKind.Boolean && argument.Value.Text == "true")
                 {
-                    if (!TryAddOption(argument.Name, optionElement.GetString()!, argument.Value, propertySchema, options, out error))
-                    {
-                        args = Array.Empty<string>();
-                        return false;
-                    }
-
-                    continue;
-                }
-
-                if (propertySchema.TryGetProperty("x-runeshela-global", out var globalElement) &&
-                    globalElement.ValueKind == JsonValueKind.String &&
-                    globalElement.GetString() == "yes")
-                {
-                    if (argument.Value.ValueKind == JsonValueKind.True)
-                    {
-                        options.Add("--yes");
-                    }
-
-                    continue;
+                    options.Add("--yes");
                 }
             }
         }
@@ -285,16 +278,16 @@ public static class RunesHelaMcpServer
 
     private static bool TryAddPositionals(
         string name,
-        JsonElement value,
+        JsonValue value,
         int position,
         List<Positional> positionals,
         out string? error)
     {
         error = null;
 
-        if (value.ValueKind == JsonValueKind.Array)
+        if (value.Kind == JsonKind.Array)
         {
-            foreach (var item in value.EnumerateArray())
+            foreach (var item in value.Items!)
             {
                 if (!TryGetScalar(item, out var text))
                 {
@@ -308,7 +301,7 @@ public static class RunesHelaMcpServer
             return true;
         }
 
-        if (value.ValueKind == JsonValueKind.Null)
+        if (value.Kind == JsonKind.Null)
         {
             return true;
         }
@@ -326,29 +319,30 @@ public static class RunesHelaMcpServer
     private static bool TryAddOption(
         string name,
         string optionName,
-        JsonElement value,
-        JsonElement propertySchema,
+        JsonValue value,
+        JsonValue propertySchema,
         List<string> options,
         out string? error)
     {
         error = null;
 
-        if (value.ValueKind == JsonValueKind.Null)
+        if (value.Kind == JsonKind.Null)
         {
             return true;
         }
 
         if (propertySchema.TryGetProperty("type", out var typeElement) &&
-            typeElement.ValueKind == JsonValueKind.String &&
-            typeElement.GetString() == "boolean" &&
-            value.ValueKind is JsonValueKind.True or JsonValueKind.False)
+            typeElement.Kind == JsonKind.String &&
+            typeElement.Text == "boolean" &&
+            value.Kind == JsonKind.Boolean)
         {
-            if (value.ValueKind == JsonValueKind.True)
+            if (value.Text == "true")
             {
                 options.Add("--" + optionName);
             }
             else if (propertySchema.TryGetProperty("x-runeshela-negatable", out var negatable) &&
-                     negatable.ValueKind == JsonValueKind.True)
+                     negatable.Kind == JsonKind.Boolean &&
+                     negatable.Text == "true")
             {
                 options.Add("--no-" + optionName);
             }
@@ -356,9 +350,9 @@ public static class RunesHelaMcpServer
             return true;
         }
 
-        if (value.ValueKind == JsonValueKind.Array)
+        if (value.Kind == JsonKind.Array)
         {
-            foreach (var item in value.EnumerateArray())
+            foreach (var item in value.Items!)
             {
                 if (!TryGetScalar(item, out var text))
                 {
@@ -384,24 +378,14 @@ public static class RunesHelaMcpServer
         return true;
     }
 
-    private static bool TryGetScalar(JsonElement value, out string text)
+    private static bool TryGetScalar(JsonValue value, out string text)
     {
-        switch (value.ValueKind)
+        switch (value.Kind)
         {
-            case JsonValueKind.String:
-                text = value.GetString() ?? string.Empty;
-                return true;
-
-            case JsonValueKind.Number:
-                text = value.GetRawText();
-                return true;
-
-            case JsonValueKind.True:
-                text = "true";
-                return true;
-
-            case JsonValueKind.False:
-                text = "false";
+            case JsonKind.String:
+            case JsonKind.Number:
+            case JsonKind.Boolean:
+                text = value.Text;
                 return true;
 
             default:
@@ -481,74 +465,32 @@ public static class RunesHelaMcpServer
         }
 
         builder.Append("{\"type\":\"text\",\"text\":");
-        AppendString(builder, text);
+        JsonWriter.WriteString(builder, text);
         builder.Append('}');
         first = false;
     }
 
-    private static string Result(string? id, string result)
+    private static string Result(JsonValue? id, string result)
     {
-        return "{\"jsonrpc\":\"2.0\",\"id\":" + (id ?? "null") + ",\"result\":" + result + "}";
+        return "{\"jsonrpc\":\"2.0\",\"id\":" + Id(id) + ",\"result\":" + result + "}";
     }
 
-    private static string Error(string? id, int code, string message)
+    private static string Error(JsonValue? id, int code, string message)
     {
-        return "{\"jsonrpc\":\"2.0\",\"id\":" + (id ?? "null")
+        return "{\"jsonrpc\":\"2.0\",\"id\":" + Id(id)
             + ",\"error\":{\"code\":" + code + ",\"message\":" + Quote(message) + "}}";
+    }
+
+    private static string Id(JsonValue? id)
+    {
+        return id is null ? "null" : JsonWriter.ToJson(id);
     }
 
     private static string Quote(string value)
     {
         var builder = new StringBuilder(value.Length + 2);
-        AppendString(builder, value);
+        JsonWriter.WriteString(builder, value);
         return builder.ToString();
-    }
-
-    private static void AppendString(StringBuilder builder, string value)
-    {
-        builder.Append('"');
-
-        foreach (var c in value)
-        {
-            switch (c)
-            {
-                case '"':
-                    builder.Append("\\\"");
-                    break;
-                case '\\':
-                    builder.Append("\\\\");
-                    break;
-                case '\b':
-                    builder.Append("\\b");
-                    break;
-                case '\f':
-                    builder.Append("\\f");
-                    break;
-                case '\n':
-                    builder.Append("\\n");
-                    break;
-                case '\r':
-                    builder.Append("\\r");
-                    break;
-                case '\t':
-                    builder.Append("\\t");
-                    break;
-                default:
-                    if (c < ' ')
-                    {
-                        builder.Append("\\u");
-                        builder.Append(((int)c).ToString("x4"));
-                    }
-                    else
-                    {
-                        builder.Append(c);
-                    }
-
-                    break;
-            }
-        }
-
-        builder.Append('"');
     }
 
     private readonly struct Positional
