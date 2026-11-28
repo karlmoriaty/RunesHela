@@ -115,6 +115,7 @@ app greet --help --json
 - **ENV 约定**：未显式设置 `Env` 时按 `APP_COMMAND_OPTION` 生成（如 `AOTCLI_GREET_TEXT`）；布尔接受 `1/0`、`true/false`、`yes/no`、`on/off`。
 - **Schema**：`app schema`（兼容 `app schema --config`）输出 JSON Schema 2020-12，键/类型/默认值与 `describe` 一致；`[Secret]` 不输出默认值。
 - **脱敏**：配置/ENV/CLI 的密钥值在错误与 JSON 中均为 `***` 或完全不出现；Unix 下世界可读且含敏感键的配置文件给出警告（`RHL_NO_CONFIG_WARNINGS=1` 可关闭）。
+- **AOT**：`System.Text.Json` 进入产物后体积增量升至 560.7 KB（启动增量 0.28 ms 仍在预算内），与 M4/M5 一并记为 M8 发布前技术债。
 
 ---
 
