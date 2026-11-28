@@ -1,28 +1,56 @@
-# RunesHela · 设计文档集
+# RunesHela
 
-> **项目名称**：RunesHela（已选定，2026-11-26；见 [06 决策记录](./docs/06-决策记录.md) D-06）
-> **状态**：**V1.0.0 已发布（NuGet.org + GitHub Release，2026-11-28）**
-> **日期**：2026-11-28
+**Treat the CLI as a compiler problem: one declaration, every artifact.**
+
+RunesHela is a compile-time CLI framework for .NET. Declare commands as plain classes;
+the compiler generates the parser, binder, router, help, shell completions, man pages,
+JSON Schema, and MCP tools. Generated binding uses no reflection, the runtime has zero
+third-party dependencies, and the hot path is allocation-free.
+
+[![NuGet](https://img.shields.io/nuget/v/RunesHela.svg)](https://www.nuget.org/packages/RunesHela)
+[![NuGet downloads](https://img.shields.io/nuget/dt/RunesHela.svg)](https://www.nuget.org/packages/RunesHela)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+
+**Status:** v1.0.0 released on NuGet.org and GitHub Releases (2026-11-28).
+
+[Quickstart](docs/quickstart.md) · [Changelog](CHANGELOG.md) · [Documentation](#documentation) · [简体中文](README.zh-CN.md)
 
 ---
 
-## 这个项目是什么
+## Why RunesHela
 
-**RunesHela 是一个面向 .NET 的编译期 CLI 框架**：开发者只声明命令（类或方法），编译器生成解析器、绑定器、帮助、补全、文档、Schema 与 MCP 工具；运行时零反射、零第三方依赖、热路径零分配，并默认对人、脚本与 AI Agent 三类消费者友好。
-
-一句话：
-
-> **把 CLI 当作编译器问题：一份声明，编译出全部产物。**
+- **One model, every artifact.** Help, `--help --json`, `describe`, `schema`,
+  completion scripts, man pages, Markdown docs, and the MCP manifest all come from
+  the same command model. They cannot drift.
+- **Zero reflection, zero runtime dependencies.** The generator emits a parser and
+  binder at compile time; generated code does not scan assemblies or invoke reflection.
+- **Allocation-free hot path.** Parsing and binding five options performs no allocations
+  beyond the command instance.
+- **Native AOT first.** Generated apps publish with Native AOT, trimming, single-file,
+  and ReadyToRun configurations; CI validates all of them.
+- **Agent-native contract.** Non-TTY behavior, structured errors with next steps,
+  destructive-operation guards, stable exit codes, self-description, and a zero-dependency
+  MCP stdio server.
 
 ---
 
-## 快速开始（5 分钟）
+## Install
 
-1. 新建控制台项目，引用 `RunesHela`（本地开发用 `ProjectReference` 同时引用 `RunesHela.Generator`，并设置 `OutputItemType="Analyzer"`）。
-2. 定义命令类（**不需要** `partial`、接口或基类）：
+```text
+dotnet add package RunesHela --version 1.0.0
+```
+
+Target framework: `net10.0` (C# 14). The package includes the runtime, XML docs, and the
+source generator under `analyzers/dotnet/cs`.
+
+---
+
+## Quickstart
 
 ```csharp
 using RunesHela;
+
+return RunesHelaApp.Run(args);
 
 /// <summary>
 /// Greets a person.
@@ -52,190 +80,141 @@ public sealed class GreetCommand
 }
 ```
 
-3. 入口只写一行：`return RunesHelaApp.Run(args);`
-4. 运行：
+No `partial`, interface, base class, or manual parser is required.
 
 ```text
 app greet Ada --count 2
 app greet --help
 app greet --help --json
+app describe
+app schema
+app mcp --manifest
 ```
 
-> 用文档注释（`<summary>`/`<example>`）补充帮助时，项目需启用
-> `<GenerateDocumentationFile>true</GenerateDocumentationFile>`；否则请用
-> `[Command(Description = ...)]` / `[Option(Description = ...)]`。
-
-### M2 已具备的能力
-
-- **纯 POCO 绑定**：`[Option]`/`[Argument]` 属性绑定，支持 `set`/`init`，无需 `partial`。
-- **选项语法**：`--opt=value`、`--opt value`、`-o value`、`-o=value`、布尔旗标、`--no-flag`、`--` 终止符、负数位置参数。
-- **类型转换**：基元/枚举/`Guid`/`DateTime(Offset)`/`TimeSpan`/`Uri`/`FileInfo`/`DirectoryInfo`/数组/可空/`IParsable`。
-- **优先级**：CLI > 环境变量（`Env = "..."`）> 属性初始化器默认值。
-- **校验**：`[Required]`、`[Range]`、`[Regex]`、`[Length]` 在生成代码中执行，零反射。
-- **帮助**：人类可读（Usage/参数/命令/选项/示例/退出码）与 `--help --json` 机器可读，同源于模型。
-- **错误契约**：`RunesHelaError`（`code`/`message`/`hint`/`nextSteps`/`docsUrl`/`exitCode`），文本与 JSON 两种渲染；数据走 stdout，诊断走 stderr。
-- **安全与终端**：`[Secret]` 在帮助/错误中脱敏；`NO_COLOR`/`TERM=dumb`/非 TTY 自动去色；帮助不含 ANSI。
-- **DI**：命令无无参构造时，生成器通过 `IServiceProvider` 解析构造参数（`RunAsync(args, services)`）。
-- **诊断**：`RHL001`–`RHL040` 编译期诊断，见 [errors.md](./docs/errors.md)。
-
-### M3 已具备的能力
-
-- **热路径优化**：选项名称长度前置比较、短选项 `switch`、枚举长度判断、`WantsJson` 单次扫描、位置参数字符串复用。
-- **零分配验证**：5 选项绑定净分配 0 B（不含命令实例），帮助 0 B，错误 304 B；Release 下以 `GC.GetAllocatedBytesForCurrentThread` 断言。
-- **性能门禁**：`tests/RunesHela.Performance.Tests` 以绝对预算（含 +10% 失败阈值）在 CI 执行，独立 `perf` job 运行微基准并上传 JSON。
-- **生成器性能**：1/10/50/200 命令 no-op 0.02–0.04 ms（预算 ≤30 ms，失败阈值 50 ms）。
-- **AOT 矩阵**：linux-x64 / win-x64 / osx-arm64 三平台 AOT + Trim/SingleFile + ReadyToRun 冒烟全部通过；启动增量 0.14 ms。
-- **DI 验证**：缺失服务提供器/缺失注册分别给出稳定错误码与退出码，不挂起。
-
-### M4 已具备的能力（Agent 契约）
-
-- **非 TTY 自动模式**：帮助恒无 ANSI；错误仅在交互式终端着色（`NO_COLOR`/`TERM=dumb`/重定向自动关闭）；数据走 stdout、诊断走 stderr。
-- **全局选项前置**：`--json`、`--plain`、`--no-color`、`--quiet`、`--verbose`、`--no-input`、`--yes`、`--format <text|plain|json>` 可在命令前解析，未知格式返回退出码 2。
-- **结构化错误**：`code`/`message`/`hint`/`nextSteps`/`docsUrl`/`exitCode`，未知命令与选项给出 did-you-mean 建议。
-- **破坏性守卫**：`[Command(IsDestructive = true)]`；非 TTY 或缺 `--yes` 立即失败（退出码 2），TTY 下交互确认，`--no-input` 禁止提示。
-- **退出码矩阵**：0/1/2/3/4/5/6/7/130/141，`RunesHelaExitCode` 常量；取消 → 130，EPIPE → 141。
-- **自描述**：`describe` 输出全树 JSON，与 `--help --json` 同源（选项/默认值/ENV/退出码）。
-- **过滤器链**：`[Command(Filters = new[] { nameof(AuditFilter) })]`，按声明顺序包裹 handler，`CommandContext` 提供路径/服务/取消令牌；生成期校验契约与构造（RHL037–RHL039）。
-
-### M5 已具备的能力（补全与文档产物）
-
-- **静态补全**：`app completion bash|zsh|fish|pwsh` 从命令模型生成脚本，覆盖命令/子命令/选项；未知 shell 返回退出码 2 并给出建议。
-- **动态补全**：隐藏命令 `app __complete <words...>` 按前缀返回候选（命令/子命令/选项），供脚本或 Agent 消费。
-- **文档产物**：`app docs` 输出 Markdown（参数/选项/默认值/ENV/子命令），`app man` 输出 roff（`man -l` 可用）。
-- **产物一致性**：help、describe、completion、docs 同源；集成测试逐项比对选项集合与命令集合，防止漂移。
-- **保留名保护**：`describe`/`schema`/`mcp`/`completion`/`docs`/`man`/`__complete` 被注册为保留命令名（RHL025）。
-
-### M6 已具备的能力（配置）
-
-- **优先级**：CLI > ENV > JSON 配置文件 > 属性默认值；CLI 显式空字符串也覆盖其他来源。
-- **配置键**：默认 `command.path.option-name`（如 `deploy.environment`），可用 `[Option(Config = "auth.token")]` 覆盖；重复键报 RHL016，非法键报 RHL040。
-- **JSON 解析**：内置最小 JSON 解析/写入器，支持点路径嵌套、标量数组与 `"a,b"` 逗号串，零反射、零第三方依赖、AOT 安全。
-- **显式配置源**：`--config <PATH>`（可放在命令前后）与 `RHL_CONFIG`；显式文件缺失/非法 → 退出码 3（`RHL_CONFIG_NOT_FOUND` / `RHL_CONFIG_INVALID` / `RHL_CONFIG_INVALID_VALUE`），错误信息不含配置值。
-- **隐式发现（opt-in）**：`[assembly: RunesHelaConfigFile]` 后按当前目录 `appsettings.json` → `~/.config/<app>/appsettings.json` 查找；未启用时保持绑定热路径零 IO、零分配（AC-04）。
-- **ENV 约定**：未显式设置 `Env` 时按 `APP_COMMAND_OPTION` 生成（如 `AOTCLI_GREET_TEXT`）；布尔接受 `1/0`、`true/false`、`yes/no`、`on/off`。
-- **Schema**：`app schema`（兼容 `app schema --config`）输出 JSON Schema 2020-12，键/类型/默认值与 `describe` 一致；`[Secret]` 不输出默认值。
-- **脱敏**：配置/ENV/CLI 的密钥值在错误与 JSON 中均为 `***` 或完全不出现；Unix 下世界可读且含敏感键的配置文件给出警告（`RHL_NO_CONFIG_WARNINGS=1` 可关闭）。
-- **AOT**：`System.Text.Json` 进入产物后体积增量升至 560.7 KB（启动增量 0.28 ms 仍在预算内），与 M4/M5 一并记为 M8 发布前技术债。
-
-### M7 已具备的能力（MCP）
-
-- **Manifest**：`app mcp --manifest` 输出来自同一命令模型的工具清单（`name`/`description`/`inputSchema`/`annotations`），仅包含可执行且未隐藏的命令。
-- **工具映射**：嵌套命令路径转 `parent_child_leaf`；参数用 `x-runeshela-position`、选项用 `x-runeshela-option` 映射回 CLI；破坏性命令提供 `yes` 布尔确认项。
-- **注解**：`destructiveHint` 来自 `[Command(IsDestructive = true)]`；`idempotentHint`/`readOnlyHint`/`openWorldHint` 采用保守默认值。
-- **stdio server**：`app mcp --stdio` 逐行 JSON-RPC，支持 `initialize`、`notifications/initialized`、`ping`、`tools/list`、`tools/call`；单线程顺序执行。
-- **结果契约**：stdout/stderr 作为 `content` 文本项返回，`isError` 对应非零退出码，`structuredContent.exitCode` 提供机器可读状态；CLI 错误（缺失必填、破坏性未确认）原样映射为工具错误。
-- **零依赖**：JSON-RPC 与参数映射使用 BCL `JsonDocument` + 手写 JSON 输出，无第三方 MCP SDK。
-- **AOT**：三平台冒烟新增 `mcp --manifest`；体积增量 605.0 KB（较 M6 +44.3 KB），启动增量 0.04 ms，体积仍为 M8 技术债。
-
-### M8 已具备的能力（发布与社区）
-
-- **单包发布**：`RunesHela` 一个 NuGet 包内含运行时、XML 文档与 `analyzers/dotnet/cs` 生成器；同时产出 `.snupkg` 符号包。NuGet：https://www.nuget.org/packages/RunesHela/1.0.0
-- **版本与兼容**：SemVer 1.0.0；公共 API 基线测试（`PublicApiTests.approved.txt`）阻止无意识破坏；CHANGELOG 记录能力与已知限制。
-- **供应链**：SourceLink + 确定性构建；SPDX 2.3 SBOM（`build/generate-sbom.py`）；包内容校验与 NuGet 消费端冒烟测试。
-- **治理**：Apache-2.0 LICENSE、NOTICE、SECURITY.md、CODEOWNERS、CONTRIBUTING.md、DCO 工作流；`release` 工作流使用 NuGet OIDC 可信发布与 `release` 环境审批。
-- **文档**：Quickstart、迁移指南、发布与回滚流程、错误码、M0–M8 基准报告。
-- **AOT 优化**：运行时移除 `System.Text.Json`，配置与 MCP 改用内置最小 JSON 解析/写入器；体积增量 432.7 KB（较 M7 −172.3 KB），启动增量 0.11 ms；仍高于 150 KB 阈值，V1.1 以 minimal profile 继续收敛。
+Document comments (`<summary>` / `<example>`) require
+`<GenerateDocumentationFile>true</GenerateDocumentationFile>`; otherwise use
+`[Command(Description = ...)]` and `[Option(Description = ...)]`.
 
 ---
 
-## 文档地图
+## What gets generated
 
-| # | 文档 | 内容 | 读者 | 状态 |
-|---|---|---|---|---|
-| 00 | [深度调研与机会分析](./docs/00-深度调研与机会分析.md) | 市场数据、竞品拆解、刚性/隐形需求、机会缺口、路线评分 | 所有人 | ✅ 完成 |
-| 01 | [产品需求文档（PRD）](./docs/01-产品需求文档-PRD.md) | 目标/非目标、55 条 FR、34 条 NFR、20 条 AC、版本范围 | 产品/开发 | ✅ 完成 |
-| 02 | [技术设计文档](./docs/02-技术设计文档.md) | 包结构、编译期模型、生成器、运行时、Agent 契约、性能/AOT、诊断、测试、安全 | 开发/架构 | ✅ 完成 |
-| 03 | [实现任务分解](./docs/03-实现任务分解.md) | M0~M8 里程碑、55 个任务、DAG、AC 追溯矩阵 | 开发/项目管理 | ✅ 完成 |
-| 04 | [验收与质量检查清单](./docs/04-验收与质量检查清单.md) | 文档/设计/功能/性能/AOT/契约/安全/发布检查项 | 测试/发布 | ✅ 完成 |
-| 05 | [架构决策记录（ADR）](./docs/05-架构决策记录-ADR.md) | 16 个关键决策的背景、选项、影响、风险 | 架构/维护者 | ✅ 已决议（待审核） |
-| 06 | [决策记录](./docs/06-决策记录.md) | **你已做出的 14 项决议** + 复核提示 | 你 | ✅ 已决议 |
-| 07 | [M0 基准报告](./docs/benchmarks/M0-基准报告.md) | 解析/帮助/错误/路由/AOT 实测与预算对照 | 开发/评审 | ✅ M0 通过 |
-| 08 | [M2 基准报告](./docs/benchmarks/M2-基准报告.md) | M2 回归：帮助 0 B、错误 304 B、集成测试 103 项 | 开发/评审 | ✅ M2 通过 |
-| 09 | [M3 基准报告](./docs/benchmarks/M3-基准报告.md) | 热路径 0 B、性能门禁、生成器 no-op、AOT/Trim/R2R 矩阵 | 开发/评审 | ✅ M3 通过 |
-| 10 | [M4 基准报告](./docs/benchmarks/M4-基准报告.md) | Agent 契约：非 TTY、错误建议、破坏性守卫、退出码、EPIPE、过滤器 | 开发/评审 | ✅ M4 通过 |
-| 11 | [M5 基准报告](./docs/benchmarks/M5-基准报告.md) | 四 shell 补全、动态补全、Man/Markdown、产物一致性 | 开发/评审 | ✅ M5 通过 |
-| 12 | [M6 基准报告](./docs/benchmarks/M6-基准报告.md) | 配置优先级、JSON/ENV、Schema、脱敏与零分配快路径 | 开发/评审 | ✅ M6 通过 |
-| 13 | [M7 基准报告](./docs/benchmarks/M7-基准报告.md) | MCP Manifest、stdio JSON-RPC、工具调用与注解 | 开发/评审 | ✅ M7 通过 |
-| 14 | [M8 基准报告](./docs/benchmarks/M8-基准报告.md) | 打包、许可/治理、公共 API 基线、AOT 优化 | 开发/评审 | ✅ M8 通过 |
-| 15 | [错误码与诊断](./docs/errors.md) | 运行时 `RHL_*` 错误码、`RHLxxx` 诊断码、退出码矩阵 | 开发/使用 | ✅ 随 M8 更新 |
-| 16 | [快速开始](./docs/quickstart.md) / [迁移指南](./docs/migration.md) / [发布流程](./docs/release.md) | 上手、迁移映射、发布与回滚 | 使用/维护 | ✅ 完成 |
-
----
-
-## 核心结论（先读这 6 条）
-
-1. **机会不在“又一个 CLI 框架”，而在“编译期 CLI 编译器 + Agent 原生契约”。**
-   现有框架要么偏性能（ConsoleAppFramework），要么偏优雅（CliFx），没有同时覆盖“类优先 + 零反射 + 产物同源 + Agent 契约”的方案。
-
-2. **Star 预期要校准。**
-   ConsoleAppFramework 单库 2,246 stars、431 万下载；Spectre.Console 11,717 stars、7,400 万下载。Cysharp 的“近 5 万 stars”是组织级累计。**下载量/真实采用**比 star 更能衡量成功。
-
-3. **双引擎是同一模型的两个入口。**
-   类优先负责工程体验，方法优先负责“一行 CLI”的传播点；两者共享解析/绑定/产物，避免两套实现。
-
-4. **Agent 是 2026 年的新变量。**
-   非 TTY 自动结构化、错误带下一步、破坏性操作不挂起、`describe`/`schema` 自描述——这些是现有 .NET 框架的空白。
-
-5. **性能必须变成工程预算。**
-   热路径 0 B、解析 ≤ 1 µs、AOT 启动额外 ≤ 1 ms、二进制增量 ≤ 100 KB、生成器 no-op ≤ 30 ms；全部进 CI 门禁，公开可复现。
-
-6. **最大风险是范围失控。**
-   明确不做：TUI、通用 DI、序列化框架、插件市场、Unity、.NET Framework。MVP 只做“类优先 + 核心 + Agent 基础”。
-
----
-
-## 已决议事项（待你审核）
-
-你已于 **2026-11-26** 做出选择，06 已转为决策记录。**在你审核通过并明确“开始开发”之前，不会进入编码。**
-
-| 编号 | 决策 | 你的选择 |
+| Artifact | Command | Contents |
 |---|---|---|
-| D-01 | 路线 | **C：双引擎 + Agent 原生** |
-| D-02 | 目标框架 | **C：net10.0 单目标 + C# 14** |
-| D-03 | 包形态 | **B：极小运行时 + 生成器（单包）** |
-| D-04 | API 主轴 | **C：类优先 + 方法优先（V0.2）** |
-| D-05 | MVP 边界 | **B：标准 MVP** |
-| D-06 | 名称 | **RunesHela** |
-| D-07 | 许可证 | **B：Apache-2.0** |
-| D-08 | 帮助来源 | **C：特性 > 文档注释 > 约定** |
-| D-09 | 渲染 | **B：自研极简 + 适配层** |
-| D-10 | 文档语言 | **B：英文优先，中文按需** |
-| D-11 | MCP | **C：Manifest + stdio server** |
-| D-12 | 国际化 | **C：V1.x 可插拔** |
-| D-13 | 交互提示 | **B：V1.x 独立包** |
-| D-14 | 遥测/治理 | **A：零遥测 + 赞助** |
+| Human help | `app --help`, `app <command> --help` | Usage, arguments, options, defaults, ENV, examples, exit codes |
+| Machine help | `--help --json` | Stable JSON model for tools and agents |
+| Full model | `app describe` | Every command, option, argument, default, ENV, config key, exit code |
+| JSON Schema | `app schema` | Configuration schema (JSON Schema 2020-12) |
+| Completions | `app completion bash\|zsh\|fish\|pwsh` | Static completion scripts; hidden `__complete` for dynamic candidates |
+| Documentation | `app docs`, `app man` | Markdown and roff generated from the model |
+| MCP | `app mcp --manifest`, `app mcp --stdio` | Tool manifest and JSON-RPC stdio server |
 
-> **D-02 已复核**：采用 **net10.0（LTS，支持至 2028-11）单目标**。net9 已于 2026-05 结束支持，net8 LTS 已于 2026-11 结束支持，故不再纳入目标；换取最小 CI 矩阵与 C# 14 能力。
+Reserved command names (`describe`, `schema`, `mcp`, `completion`, `docs`, `man`,
+`__complete`) are protected by diagnostic `RHL025`.
 
 ---
 
-## 阅读路径建议
+## Binding, validation, and configuration
 
-- **只想判断“值不值得做”**：00 → 本文“核心结论” → 06。
-- **要评审产品范围**：00 → 01 → 06。
-- **要评审技术方案**：02 → 05 → 03。
-- **准备开始开发**：01 → 02 → 03 → 04。
-- **准备发布**：04 → 05（版本/兼容）→ 06（治理）。
+- **Syntax:** `--opt=value`, `--opt value`, `-o value`, `-o=value`, boolean flags,
+  `--no-flag`, `--` terminator, repeated and comma-separated arrays, negative positional numbers.
+- **Types:** primitives, enums, `Guid`, `DateTime(Offset)`, `TimeSpan`, `Uri`,
+  `FileInfo`, `DirectoryInfo`, arrays, nullable values, and `IParsable<T>`.
+- **Precedence:** CLI > environment > JSON configuration > property initializer.
+- **Environment:** explicit `[Option(Env = "...")]` or the `APP_COMMAND_OPTION`
+  convention; booleans accept `1/0`, `true/false`, `yes/no`, `on/off`.
+- **Configuration:** `--config <PATH>` or `RHL_CONFIG`; dot-path keys
+  (`deploy.environment`) with `[Option(Config = "...")]` overrides; opt-in implicit
+  `appsettings.json` discovery via `[assembly: RunesHelaConfigFile]`.
+- **Validation:** `[Required]`, `[Range]`, `[Regex]`, and `[Length]` execute inside
+  generated code.
+- **Errors:** stable `RHL_*` codes, did-you-mean hints, `nextSteps`, `docsUrl`, and the
+  0/1/2/3/4/5/6/7/130/141 exit-code matrix. `[Secret]` values are redacted everywhere.
+
+See [configuration and errors](docs/errors.md) for the full contract.
 
 ---
 
-## 边界声明
+## Agent contract
 
-- 当前已完成 **M8**（2026-11-28）：单包打包、公共 API 基线与发布流水线、许可/治理、Quickstart/迁移/发布文档；**V1.0.0 已发布到 NuGet.org 与 GitHub Release**。
-- 以上决议已按你的选择写入文档；项目已按决议进入开发。
+- Non-TTY output never contains ANSI escapes; data goes to stdout and diagnostics to stderr.
+- Destructive commands (`IsDestructive = true`) fail immediately without `--yes` when
+  interactive input is unavailable; they never hang.
+- `describe` and `--help --json` expose the complete model for generation and repair.
+- `mcp --stdio` serves `initialize`, `tools/list`, and `tools/call` over JSON-RPC;
+  tool results carry stdout/stderr, `isError`, and `structuredContent.exitCode`.
+- Errors include actionable next steps, so an agent can retry without guessing.
 
 ---
 
-## 目录结构
+## Performance and AOT
+
+| Metric | Target | Current |
+|---|---|---|
+| Parsing + binding (5 options) | ≤ 1 µs, 0 B | budget enforced in CI; 0 B net allocation |
+| Help / error allocation | 0 B / small | enforced by performance tests |
+| Native AOT startup delta | ≤ 1 ms | 0.11 ms |
+| Native AOT size delta | ≤ 100 KB target, 150 KB fail threshold | 432.7 KB (known limitation, V1.1) |
+
+The AOT size gap is documented in the
+[M8 benchmark report](docs/benchmarks/M8-基准报告.md). `System.Text.Json` was removed in
+1.0.0; the remaining delta is native code and reachable framework members rather than
+embedded strings. A minimal profile is planned for V1.1.
+
+---
+
+## Compatibility
+
+- Semantic Versioning; the current release is `1.0.0`.
+- Public API is tracked by `tests/RunesHela.Tests/PublicApiTests.approved.txt`; changes
+  require an explicit baseline update.
+- Generated JSON artifacts expose `schemaVersion`; additive fields are allowed in minor
+  releases, removals require a major version.
+- Exit codes and stdout/stderr separation are part of the compatibility contract.
+
+See [CHANGELOG.md](CHANGELOG.md) and [release process](docs/release.md).
+
+---
+
+## Documentation
+
+| Document | Contents |
+|---|---|
+| [Quickstart](docs/quickstart.md) | Install, declare commands, configuration, MCP, AOT |
+| [Migration guide](docs/migration.md) | From System.CommandLine, Spectre.Console.Cli, ConsoleAppFramework, hand-written `Main` |
+| [Error codes](docs/errors.md) | Runtime `RHL_*` codes, `RHLxxx` diagnostics, exit codes |
+| [Release process](docs/release.md) | Versioning, trusted publishing, rollback, supply chain |
+| [Benchmarks](docs/benchmarks/M8-基准报告.md) | M0–M8 performance, AOT, packaging reports |
+| [Chinese README](README.zh-CN.md) | 中文说明（副文档） |
+
+The deeper design documents (`docs/00`–`docs/06`) are currently written in Chinese.
+
+---
+
+## Build from source
 
 ```text
-work111/
-└─ docs/
-   ├─ 00-深度调研与机会分析.md
-   ├─ 01-产品需求文档-PRD.md
-   ├─ 02-技术设计文档.md
-   ├─ 03-实现任务分解.md
-   ├─ 04-验收与质量检查清单.md
-   ├─ 05-架构决策记录-ADR.md
-   └─ 06-决策记录.md
+dotnet restore RunesHela.slnx
+dotnet build RunesHela.slnx -c Release -m:1
+dotnet test tests/RunesHela.Tests -c Release
+dotnet test tests/RunesHela.Generator.Tests -c Release
+dotnet test tests/RunesHela.Integration.Tests -c Release
+dotnet test tests/RunesHela.Performance.Tests -c Release
 ```
+
+Pack the NuGet package (runtime + analyzer + symbols):
+
+```text
+dotnet pack src/RunesHela/RunesHela.csproj -c Release -o artifacts/packages
+```
+
+---
+
+## Contributing, security, and license
+
+- [Contributing](CONTRIBUTING.md) — build, test, DCO sign-off (`git commit -s`), and PR checks.
+- [Security policy](SECURITY.md) — private vulnerability reporting and disclosure timeline.
+- [Apache-2.0](LICENSE) — see also [NOTICE](NOTICE).
+
+RunesHela is not affiliated with any other CLI framework. The runtime depends only on
+the BCL.
