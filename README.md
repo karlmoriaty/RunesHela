@@ -1,7 +1,7 @@
 # RunesHela · 设计文档集
 
 > **项目名称**：RunesHela（已选定，2026-11-26；见 [06 决策记录](./docs/06-决策记录.md) D-06）
-> **状态**：**V1.0.0 GitHub Release 已发布（2026-11-28）**，NuGet 发布等待可信发布凭据
+> **状态**：**V1.0.0 已发布（NuGet.org + GitHub Release，2026-11-28）**
 > **日期**：2026-11-28
 
 ---
@@ -129,7 +129,7 @@ app greet --help --json
 
 ### M8 已具备的能力（发布与社区）
 
-- **单包发布**：`RunesHela` 一个 NuGet 包内含运行时、XML 文档与 `analyzers/dotnet/cs` 生成器；同时产出 `.snupkg` 符号包。
+- **单包发布**：`RunesHela` 一个 NuGet 包内含运行时、XML 文档与 `analyzers/dotnet/cs` 生成器；同时产出 `.snupkg` 符号包。NuGet：https://www.nuget.org/packages/RunesHela/1.0.0
 - **版本与兼容**：SemVer 1.0.0；公共 API 基线测试（`PublicApiTests.approved.txt`）阻止无意识破坏；CHANGELOG 记录能力与已知限制。
 - **供应链**：SourceLink + 确定性构建；SPDX 2.3 SBOM（`build/generate-sbom.py`）；包内容校验与 NuGet 消费端冒烟测试。
 - **治理**：Apache-2.0 LICENSE、NOTICE、SECURITY.md、CODEOWNERS、CONTRIBUTING.md、DCO 工作流；`release` 工作流使用 NuGet OIDC 可信发布与 `release` 环境审批。
@@ -221,7 +221,7 @@ app greet --help --json
 
 ## 边界声明
 
-- 当前已完成 **M8**（2026-11-28）：单包打包、公共 API 基线与发布流水线、许可/治理、Quickstart/迁移/发布文档；**V1.0.0 GitHub Release 已发布**（包/符号包/SBOM），NuGet 发布等待凭据。
+- 当前已完成 **M8**（2026-11-28）：单包打包、公共 API 基线与发布流水线、许可/治理、Quickstart/迁移/发布文档；**V1.0.0 已发布到 NuGet.org 与 GitHub Release**。
 - 以上决议已按你的选择写入文档；项目已按决议进入开发。
 
 ---
