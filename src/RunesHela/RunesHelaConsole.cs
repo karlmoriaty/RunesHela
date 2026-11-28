@@ -48,6 +48,7 @@ public interface IInteractiveConsole : IConsole
 public static class RunesHelaConsole
 {
     private static IConsole s_current = SystemConsole.Instance;
+    private static IInteractiveConsole? s_interactive;
 
     /// <summary>
     /// Gets or sets the console used by the runtime. Intended for tests and hosts.
@@ -58,7 +59,16 @@ public static class RunesHelaConsole
         set => s_current = value ?? throw new ArgumentNullException(nameof(value));
     }
 
-    private sealed class SystemConsole : IConsole, IInteractiveConsole
+    /// <summary>
+    /// Gets or sets the console used for interactive confirmation prompts.
+    /// </summary>
+    public static IInteractiveConsole? Interactive
+    {
+        get => s_interactive ??= SystemInteractiveConsole.Instance;
+        set => s_interactive = value;
+    }
+
+    private sealed class SystemConsole : IConsole
     {
         public static readonly SystemConsole Instance = new();
 
@@ -67,10 +77,6 @@ public static class RunesHelaConsole
         public TextWriter Error => Console.Error;
 
         public bool IsOutputRedirected => Console.IsOutputRedirected;
-
-        public bool IsInputRedirected => Console.IsInputRedirected;
-
-        public TextReader In => Console.In;
 
         public bool IsAnsiSupported { get; } = DetectAnsiSupport();
 
@@ -91,5 +97,22 @@ public static class RunesHelaConsole
                 "dumb",
                 StringComparison.OrdinalIgnoreCase);
         }
+    }
+
+    private sealed class SystemInteractiveConsole : IInteractiveConsole
+    {
+        public static readonly SystemInteractiveConsole Instance = new();
+
+        public TextWriter Out => Console.Out;
+
+        public TextWriter Error => Console.Error;
+
+        public bool IsOutputRedirected => Console.IsOutputRedirected;
+
+        public bool IsAnsiSupported => SystemConsole.Instance.IsAnsiSupported;
+
+        public bool IsInputRedirected => Console.IsInputRedirected;
+
+        public TextReader In => Console.In;
     }
 }

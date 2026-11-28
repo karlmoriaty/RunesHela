@@ -68,10 +68,12 @@ internal static class Cli
         IServiceProvider? services)
     {
         var previousConsole = RunesHelaConsole.Current;
+        var previousInteractive = RunesHelaConsole.Interactive;
         var previousOut = Console.Out;
         var previousError = Console.Error;
 
         RunesHelaConsole.Current = console;
+        RunesHelaConsole.Interactive = console;
         Console.SetOut(console.Out);
         Console.SetError(console.Error);
 
@@ -86,6 +88,7 @@ internal static class Cli
             Console.SetOut(previousOut);
             Console.SetError(previousError);
             RunesHelaConsole.Current = previousConsole;
+            RunesHelaConsole.Interactive = previousInteractive;
         }
     }
 }

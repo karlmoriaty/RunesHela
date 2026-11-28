@@ -20,9 +20,9 @@ public static class RunesHelaGuard
             return RunesHelaExitCode.Success;
         }
 
-        var console = RunesHelaConsole.Current;
+        var interactive = RunesHelaConsole.Interactive;
 
-        if (noInput || console is not IInteractiveConsole interactive || interactive.IsInputRedirected)
+        if (noInput || interactive is null || interactive.IsInputRedirected)
         {
             return RunesHelaErrors.ConfirmationRequired(commandPath, json);
         }
