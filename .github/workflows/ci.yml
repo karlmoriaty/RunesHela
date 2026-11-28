@@ -52,6 +52,48 @@ jobs:
       - name: Micro benchmarks
         run: dotnet run --project benchmarks/RunesHela.Benchmarks/RunesHela.Benchmarks.csproj -c Release -- --filter "*" --job short --exporters json
 
+      - name: Enforce benchmark budgets
+        run: |
+          python3 - <<'PY'
+          import glob
+          import json
+          import sys
+
+          limits = {
+              "FiveOptions": 1100.0,
+              "Help": 5500.0,
+              "Error": 5500.0,
+              "Route": 1100.0,
+          }
+
+          failed = False
+          found = 0
+
+          for path in glob.glob("BenchmarkDotNet.Artifacts/results/*.json"):
+              with open(path, encoding="utf-8") as handle:
+                  data = json.load(handle)
+
+              for benchmark in data.get("Benchmarks", []):
+                  method = benchmark.get("Method")
+
+                  if method not in limits:
+                      continue
+
+                  found += 1
+                  mean = benchmark["Statistics"]["Mean"]
+                  status = "PASS" if mean <= limits[method] else "FAIL"
+                  print(f"{method}: {mean:.2f} ns (limit {limits[method]:.0f} ns) {status}")
+
+                  if mean > limits[method]:
+                      failed = True
+
+          if found == 0:
+              print("No benchmark results were found.")
+              sys.exit(1)
+
+          sys.exit(1 if failed else 0)
+          PY
+
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4
         with:

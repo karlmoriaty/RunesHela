@@ -35,14 +35,16 @@ internal static class Measure
 
     public static double BestNanosecondsPerOperation(Action action, int iterations)
     {
-        for (var i = 0; i < 1000; i++)
+        var warmup = Stopwatch.StartNew();
+
+        for (var i = 0; i < 1_000_000 && warmup.ElapsedMilliseconds < 150; i++)
         {
             action();
         }
 
         var best = double.MaxValue;
 
-        for (var round = 0; round < 7; round++)
+        for (var round = 0; round < 10; round++)
         {
             var start = Stopwatch.GetTimestamp();
 

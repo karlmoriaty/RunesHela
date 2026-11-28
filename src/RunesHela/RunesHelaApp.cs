@@ -37,7 +37,7 @@ public static class RunesHelaApp
     /// <returns>The process exit code.</returns>
     public static int Run(string[] args)
     {
-        return RunAsync(args).GetAwaiter().GetResult();
+        return RunProtected(args, services: null, CancellationToken.None);
     }
 
     /// <summary>
@@ -48,7 +48,8 @@ public static class RunesHelaApp
     /// <returns>The process exit code.</returns>
     public static int Run(string[] args, IServiceProvider services)
     {
-        return RunAsync(args, services).GetAwaiter().GetResult();
+        ArgumentNullException.ThrowIfNull(services);
+        return RunProtected(args, services, CancellationToken.None);
     }
 
     /// <summary>
@@ -88,6 +89,40 @@ public static class RunesHelaApp
         return version is null ? "0.0.0" : version.ToString(3);
     }
 
+    private static int RunProtected(string[] args, IServiceProvider? services, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(args);
+
+        if (s_entry is null)
+        {
+            return WriteMissingEntry();
+        }
+
+        try
+        {
+            var task = s_entry(args, services, cancellationToken);
+
+            if (task.IsCompletedSuccessfully)
+            {
+                return task.Result;
+            }
+
+            return task.AsTask().GetAwaiter().GetResult();
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return RunesHelaExitCode.Interrupted;
+        }
+        catch (IOException)
+        {
+            return RunesHelaExitCode.BrokenPipe;
+        }
+        catch (Exception exception)
+        {
+            return WriteUnexpected(exception, args);
+        }
+    }
+
     private static async ValueTask<int> RunProtectedAsync(
         string[] args,
         IServiceProvider? services,
@@ -97,9 +132,7 @@ public static class RunesHelaApp
 
         if (s_entry is null)
         {
-            RunesHelaConsole.Current.Error.WriteLine(
-                "RunesHela: no generated entry point was found. Add [Command] to a class and reference the RunesHela generator.");
-            return RunesHelaExitCode.Failure;
+            return WriteMissingEntry();
         }
 
         try
@@ -116,17 +149,29 @@ public static class RunesHelaApp
         }
         catch (Exception exception)
         {
-            try
-            {
-                return RunesHelaErrors.Unexpected(
-                    exception,
-                    RunesHelaOutputOptions.WantsVerbose(args),
-                    RunesHelaOutputOptions.WantsJson(args));
-            }
-            catch (IOException)
-            {
-                return RunesHelaExitCode.BrokenPipe;
-            }
+            return WriteUnexpected(exception, args);
+        }
+    }
+
+    private static int WriteMissingEntry()
+    {
+        RunesHelaConsole.Current.Error.WriteLine(
+            "RunesHela: no generated entry point was found. Add [Command] to a class and reference the RunesHela generator.");
+        return RunesHelaExitCode.Failure;
+    }
+
+    private static int WriteUnexpected(Exception exception, string[] args)
+    {
+        try
+        {
+            return RunesHelaErrors.Unexpected(
+                exception,
+                RunesHelaOutputOptions.WantsVerbose(args),
+                RunesHelaOutputOptions.WantsJson(args));
+        }
+        catch (IOException)
+        {
+            return RunesHelaExitCode.BrokenPipe;
         }
     }
 }
