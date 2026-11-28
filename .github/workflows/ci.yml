@@ -131,18 +131,8 @@ jobs:
       - name: Publish Native AOT
         shell: bash
         run: |
-          extra=""
-          if [ "${{ matrix.rid }}" = "linux-x64" ]; then extra="-p:IlcGenerateMapFile=true"; fi
-          dotnet publish samples/AotCli/AotCli.csproj -c Release -r ${{ matrix.rid }} -o artifacts/aot/${{ matrix.rid }} $extra
+          dotnet publish samples/AotCli/AotCli.csproj -c Release -r ${{ matrix.rid }} -o artifacts/aot/${{ matrix.rid }}
           dotnet publish samples/EmptyAot/EmptyAot.csproj -c Release -r ${{ matrix.rid }} -o artifacts/aot/${{ matrix.rid }}
-
-      - name: Upload AOT map
-        if: matrix.rid == 'linux-x64'
-        uses: actions/upload-artifact@v4
-        with:
-          name: aot-map
-          path: samples/AotCli/obj/Release/net10.0/linux-x64/native/*.map.xml
-          if-no-files-found: warn
 
       - name: Smoke test AOT binaries
         shell: bash
