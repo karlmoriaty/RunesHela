@@ -707,7 +707,7 @@ public sealed class GeneratorTests
 
             namespace Demo;
 
-            [Command("bad", Description = "Bad filter.", Filters = new[] { typeof(int) })]
+            [Command("bad", Description = "Bad filter.", Filters = new[] { "System.Int32" })]
             public sealed class BadFilterCommand
             {
                 public void Run()
@@ -733,7 +733,7 @@ public sealed class GeneratorTests
             {
             }
 
-            [Command("bad", Description = "Bad filter.", Filters = new[] { typeof(NotAFilter) })]
+            [Command("bad", Description = "Bad filter.", Filters = new[] { nameof(NotAFilter) })]
             public sealed class BadFilterCommand
             {
                 public void Run()
@@ -769,7 +769,7 @@ public sealed class GeneratorTests
                 }
             }
 
-            [Command("bad", Description = "Bad filter.", Filters = new[] { typeof(NeedsDependency) })]
+            [Command("bad", Description = "Bad filter.", Filters = new[] { nameof(NeedsDependency) })]
             public sealed class BadFilterCommand
             {
                 public void Run()

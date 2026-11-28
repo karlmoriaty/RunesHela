@@ -235,7 +235,7 @@ public sealed class SnapshotTests
                 "purge",
                 Description = "Purges a target.",
                 IsDestructive = true,
-                Filters = new[] { typeof(AuditFilter) })]
+                Filters = new[] { nameof(AuditFilter) })]
             public sealed class PurgeCommand
             {
                 /// <summary>

@@ -48,7 +48,8 @@ public sealed class CommandAttribute : Attribute
     public bool IsDestructive { get; set; }
 
     /// <summary>
-    /// Gets or sets the filter types wrapped around the handler, in declaration order.
+    /// Gets or sets the filter type names wrapped around the handler, in declaration order.
+    /// Use <c>nameof(MyFilter)</c> or a fully qualified type name.
     /// </summary>
-    public Type[] Filters { get; set; } = Array.Empty<Type>();
+    public string[] Filters { get; set; } = Array.Empty<string>();
 }

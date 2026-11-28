@@ -95,7 +95,7 @@ app greet --help --json
 - **破坏性守卫**：`[Command(IsDestructive = true)]`；非 TTY 或缺 `--yes` 立即失败（退出码 2），TTY 下交互确认，`--no-input` 禁止提示。
 - **退出码矩阵**：0/1/2/3/4/5/6/7/130/141，`RunesHelaExitCode` 常量；取消 → 130，EPIPE → 141。
 - **自描述**：`describe` 输出全树 JSON，与 `--help --json` 同源（选项/默认值/ENV/退出码）。
-- **过滤器链**：`[Command(Filters = new[] { typeof(AuditFilter) })]`，按声明顺序包裹 handler，`CommandContext` 提供路径/服务/取消令牌；生成期校验契约与构造（RHL037–RHL039）。
+- **过滤器链**：`[Command(Filters = new[] { nameof(AuditFilter) })]`，按声明顺序包裹 handler，`CommandContext` 提供路径/服务/取消令牌；生成期校验契约与构造（RHL037–RHL039）。
 
 ---
 

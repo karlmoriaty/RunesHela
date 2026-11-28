@@ -233,14 +233,27 @@ internal static class CommandModelFactory
 
         foreach (var item in argument.Value.Values)
         {
-            var display = item.Value is ITypeSymbol filterSymbol ? filterSymbol.ToDisplayString() : "?";
+            if (item.Value is not string typeName || typeName.Length == 0)
+            {
+                diagnostics.Add(new DiagnosticInfo("RHL037", location, "?", commandName));
+                return null;
+            }
 
-            if (item.Value is not INamedTypeSymbol filterType ||
-                filterType.TypeKind != Microsoft.CodeAnalysis.TypeKind.Class ||
+            var matches = FindTypes(compilation, typeName);
+
+            if (matches.Count != 1)
+            {
+                diagnostics.Add(new DiagnosticInfo("RHL037", location, typeName, commandName));
+                return null;
+            }
+
+            var filterType = matches[0];
+
+            if (filterType.TypeKind != Microsoft.CodeAnalysis.TypeKind.Class ||
                 filterType.IsGenericType ||
                 filterType.IsAbstract)
             {
-                diagnostics.Add(new DiagnosticInfo("RHL037", location, display, commandName));
+                diagnostics.Add(new DiagnosticInfo("RHL037", location, typeName, commandName));
                 return null;
             }
 
@@ -260,7 +273,7 @@ internal static class CommandModelFactory
 
             if (!implementsContract)
             {
-                diagnostics.Add(new DiagnosticInfo("RHL038", location, display, commandName));
+                diagnostics.Add(new DiagnosticInfo("RHL038", location, typeName, commandName));
                 return null;
             }
 
@@ -279,7 +292,7 @@ internal static class CommandModelFactory
 
             if (!hasConstructor)
             {
-                diagnostics.Add(new DiagnosticInfo("RHL039", location, display, commandName));
+                diagnostics.Add(new DiagnosticInfo("RHL039", location, typeName, commandName));
                 return null;
             }
 
@@ -287,6 +300,38 @@ internal static class CommandModelFactory
         }
 
         return result.ToArray();
+    }
+
+    private static List<INamedTypeSymbol> FindTypes(Compilation compilation, string typeName)
+    {
+        var matches = new List<INamedTypeSymbol>();
+        var direct = compilation.GetTypeByMetadataName(typeName);
+
+        if (direct is not null)
+        {
+            matches.Add(direct);
+            return matches;
+        }
+
+        CollectTypes(compilation.Assembly.GlobalNamespace, typeName, matches);
+        return matches;
+    }
+
+    private static void CollectTypes(INamespaceSymbol @namespace, string typeName, List<INamedTypeSymbol> matches)
+    {
+        foreach (var member in @namespace.GetMembers())
+        {
+            switch (member)
+            {
+                case INamespaceSymbol childNamespace:
+                    CollectTypes(childNamespace, typeName, matches);
+                    break;
+
+                case INamedTypeSymbol type when type.Name == typeName:
+                    matches.Add(type);
+                    break;
+            }
+        }
     }
 
     private static bool HasCommandAttribute(INamedTypeSymbol type)

@@ -289,7 +289,7 @@ public sealed class BoomCommand
 [Command(
     "filtered",
     Description = "Runs through filters.",
-    Filters = new[] { typeof(OuterFilter), typeof(InnerFilter) })]
+    Filters = new[] { nameof(OuterFilter), nameof(InnerFilter) })]
 public sealed class FilteredCommand
 {
     public int Run()
