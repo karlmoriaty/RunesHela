@@ -805,6 +805,128 @@ public sealed class GeneratorTests
         Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL025");
     }
 
+    [Fact]
+    public void DerivesConfigurationKeysAndEnvironmentNames()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("deploy", Description = "Deploy.")]
+            public sealed class DeployCommand
+            {
+                /// <summary>
+                /// Target environment.
+                /// </summary>
+                [Option(Description = "Target environment.")]
+                public string Environment { get; init; } = "dev";
+
+                /// <summary>
+                /// API token.
+                /// </summary>
+                [Option(Description = "API token.", Config = "auth.token")]
+                public string Token { get; init; } = "";
+
+                public void Run()
+                {
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.CompileErrors);
+        Assert.Contains("\"deploy.environment\"", result.GeneratedSource);
+        Assert.Contains("\"auth.token\"", result.GeneratedSource);
+        Assert.Contains("\"TESTASSEMBLY_DEPLOY_ENVIRONMENT\"", result.GeneratedSource);
+        Assert.Contains("RunesHelaConfiguration.Load", result.GeneratedSource);
+        Assert.Contains("\\\"kind\\\":\\\"config\\\"", result.GeneratedSource);
+    }
+
+    [Fact]
+    public void ReportsInvalidConfigurationKey()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("deploy", Description = "Deploy.")]
+            public sealed class DeployCommand
+            {
+                [Option(Description = "Target environment.", Config = "deploy environment")]
+                public string Environment { get; init; } = "dev";
+
+                public void Run()
+                {
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL040");
+    }
+
+    [Fact]
+    public void ReportsDuplicateConfigurationKey()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("deploy", Description = "Deploy.")]
+            public sealed class DeployCommand
+            {
+                [Option(Description = "Target environment.", Config = "deploy.shared")]
+                public string Environment { get; init; } = "dev";
+
+                [Option(Description = "Region.", Config = "deploy.shared")]
+                public string Region { get; init; } = "eu";
+
+                public void Run()
+                {
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL016");
+    }
+
+    [Fact]
+    public void EnablesImplicitConfigurationFileDiscovery()
+    {
+        const string source = """
+            using RunesHela;
+
+            [assembly: RunesHelaConfigFile("custom.json")]
+
+            namespace Demo;
+
+            [Command("deploy", Description = "Deploy.")]
+            public sealed class DeployCommand
+            {
+                [Option(Description = "Target environment.")]
+                public string Environment { get; init; } = "dev";
+
+                public void Run()
+                {
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.CompileErrors);
+        Assert.Contains(
+            "RunesHelaConfiguration.Load(localConfigPath, AppName, json, \"custom.json\", commandPath)",
+            result.GeneratedSource);
+    }
+
     internal static GeneratorResult RunGenerator(string source)
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);

@@ -80,6 +80,7 @@ internal sealed class OptionModel : IEquatable<OptionModel>
         string defaultLiteral,
         string defaultDisplay,
         string? envVar,
+        string? configKey,
         bool isHidden,
         bool isSecret,
         string description,
@@ -96,6 +97,7 @@ internal sealed class OptionModel : IEquatable<OptionModel>
         DefaultLiteral = defaultLiteral;
         DefaultDisplay = defaultDisplay;
         EnvVar = envVar;
+        ConfigKey = configKey;
         IsHidden = isHidden;
         IsSecret = isSecret;
         Description = description;
@@ -123,6 +125,8 @@ internal sealed class OptionModel : IEquatable<OptionModel>
     public string DefaultDisplay { get; }
 
     public string? EnvVar { get; }
+
+    public string? ConfigKey { get; }
 
     public bool IsHidden { get; }
 
@@ -152,6 +156,7 @@ internal sealed class OptionModel : IEquatable<OptionModel>
                DefaultLiteral == other.DefaultLiteral &&
                DefaultDisplay == other.DefaultDisplay &&
                EnvVar == other.EnvVar &&
+               ConfigKey == other.ConfigKey &&
                IsHidden == other.IsHidden &&
                IsSecret == other.IsSecret &&
                Description == other.Description &&
@@ -178,6 +183,7 @@ internal sealed class OptionModel : IEquatable<OptionModel>
             hash = (hash * 397) ^ DefaultLiteral.GetHashCode();
             hash = (hash * 397) ^ DefaultDisplay.GetHashCode();
             hash = (hash * 397) ^ (EnvVar?.GetHashCode() ?? 0);
+            hash = (hash * 397) ^ (ConfigKey?.GetHashCode() ?? 0);
             hash = (hash * 397) ^ (IsHidden ? 1 : 0);
             hash = (hash * 397) ^ (IsSecret ? 1 : 0);
             hash = (hash * 397) ^ Description.GetHashCode();

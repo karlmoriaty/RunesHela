@@ -46,6 +46,7 @@ internal static class BindingModelFactory
         "plain",
         "no-color",
         "format",
+        "config",
     };
 
     public static BindingModelResult Create(
@@ -58,6 +59,7 @@ internal static class BindingModelFactory
         var options = new List<OptionModel>();
         var parameters = new List<ParameterModel>();
         var optionNames = new Dictionary<string, string>(StringComparer.Ordinal);
+        var configKeys = new HashSet<string>(StringComparer.Ordinal);
         var shortNames = new Dictionary<char, string>();
 
         foreach (var member in type.GetMembers())
@@ -298,10 +300,32 @@ internal static class BindingModelFactory
 
             var valueName = GetNamedString(optionAttribute!, "ValueName") ?? Names.ValueNameOf(typeModel);
             var envVar = GetNamedString(optionAttribute!, "Env");
+            var configKey = GetNamedString(optionAttribute!, "Config");
 
             if (string.IsNullOrWhiteSpace(envVar))
             {
                 envVar = null;
+            }
+
+            if (string.IsNullOrWhiteSpace(configKey))
+            {
+                configKey = null;
+            }
+            else
+            {
+                configKey = configKey!.Trim();
+
+                if (!Names.IsValidConfigKey(configKey))
+                {
+                    diagnostics.Add(new DiagnosticInfo("RHL040", propertyLocation, configKey));
+                    continue;
+                }
+
+                if (!configKeys.Add(configKey))
+                {
+                    diagnostics.Add(new DiagnosticInfo("RHL016", propertyLocation, configKey, type.Name));
+                    continue;
+                }
             }
 
             options.Add(new OptionModel(
@@ -316,6 +340,7 @@ internal static class BindingModelFactory
                 defaultLiteral,
                 defaultDisplay,
                 envVar,
+                configKey,
                 GetNamedBoolean(optionAttribute!, "Hidden"),
                 HasAttribute(property, SecretAttributeName),
                 description,

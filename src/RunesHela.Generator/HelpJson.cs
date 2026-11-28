@@ -53,7 +53,11 @@ internal static class HelpJson
         {
             foreach (var option in model.Options)
             {
-                AppendOption(builder, option);
+                AppendOption(
+                    builder,
+                    option,
+                    ConfigurationConventions.ConfigKey(node!.Path, option),
+                    ConfigurationConventions.EnvVar(appName, node.Path, option));
             }
 
             if (model.IsDestructive)
@@ -63,6 +67,7 @@ internal static class HelpJson
             }
         }
 
+        AppendConfigOption(builder);
         AppendGlobalOption(builder, "help", "h", "Show help.");
 
         if (isRoot)
@@ -103,7 +108,7 @@ internal static class HelpJson
         return builder.ToString();
     }
 
-    internal static void AppendOption(JsonBuilder builder, OptionModel option)
+    internal static void AppendOption(JsonBuilder builder, OptionModel option, string configKey, string envVar)
     {
         builder.StartObject();
         builder.Name("name").Value(option.LongName);
@@ -125,7 +130,8 @@ internal static class HelpJson
         builder.Name("repeatable").Value(option.IsRepeatable);
         builder.Name("required").Value(option.IsRequired);
         AppendDefault(builder, option.HasDefault, option.IsSecret, option.Type, option.DefaultDisplay, option.DefaultLiteral);
-        builder.Name("env").Value(option.EnvVar);
+        builder.Name("configKey").Value(configKey);
+        builder.Name("env").Value(envVar);
         builder.Name("secret").Value(option.IsSecret);
         builder.Name("hidden").Value(option.IsHidden);
         builder.Name("description").Value(option.Description);
@@ -205,10 +211,33 @@ internal static class HelpJson
         builder.Name("required").Value(false);
         builder.Name("hasDefault").Value(false);
         builder.Name("default").Value((string?)null);
+        builder.Name("configKey").Value((string?)null);
         builder.Name("env").Value((string?)null);
         builder.Name("secret").Value(false);
         builder.Name("hidden").Value(false);
         builder.Name("description").Value(description);
+        builder.EndObject();
+    }
+
+    internal static void AppendConfigOption(JsonBuilder builder)
+    {
+        builder.StartObject();
+        builder.Name("name").Value("config");
+        builder.Name("short").Value((string?)null);
+        builder.Name("aliases").StartArray().EndArray();
+        builder.Name("type").Value("string");
+        builder.Name("valueName").Value("PATH");
+        builder.Name("flag").Value(false);
+        builder.Name("negatable").Value(false);
+        builder.Name("repeatable").Value(false);
+        builder.Name("required").Value(false);
+        builder.Name("hasDefault").Value(false);
+        builder.Name("default").Value((string?)null);
+        builder.Name("configKey").Value((string?)null);
+        builder.Name("env").Value("RHL_CONFIG");
+        builder.Name("secret").Value(false);
+        builder.Name("hidden").Value(false);
+        builder.Name("description").Value("Read configuration from PATH.");
         builder.EndObject();
     }
 

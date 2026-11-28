@@ -16,7 +16,7 @@ internal static class DescribeJson
 
         foreach (var root in roots)
         {
-            AppendCommand(builder, root);
+            AppendCommand(builder, root, appName);
         }
 
         builder.EndArray();
@@ -24,7 +24,7 @@ internal static class DescribeJson
         return builder.ToString();
     }
 
-    private static void AppendCommand(JsonBuilder builder, CommandNode node)
+    private static void AppendCommand(JsonBuilder builder, CommandNode node, string application)
     {
         var model = node.Model;
 
@@ -57,7 +57,11 @@ internal static class DescribeJson
 
         foreach (var option in model.Options)
         {
-            HelpJson.AppendOption(builder, option);
+            HelpJson.AppendOption(
+                builder,
+                option,
+                ConfigurationConventions.ConfigKey(node.Path, option),
+                ConfigurationConventions.EnvVar(application, node.Path, option));
         }
 
         if (model.IsDestructive)
@@ -66,6 +70,7 @@ internal static class DescribeJson
             HelpJson.AppendGlobalOption(builder, "no-input", null, "Disable interactive prompts.");
         }
 
+        HelpJson.AppendConfigOption(builder);
         HelpJson.AppendGlobalOption(builder, "help", "h", "Show help.");
 
         builder.EndArray();
@@ -93,7 +98,7 @@ internal static class DescribeJson
 
         foreach (var child in node.Children)
         {
-            AppendCommand(builder, child);
+            AppendCommand(builder, child, application);
         }
 
         builder.EndArray();

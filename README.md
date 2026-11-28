@@ -1,7 +1,7 @@
 # RunesHela · 设计文档集
 
 > **项目名称**：RunesHela（已选定，2026-11-26；见 [06 决策记录](./docs/06-决策记录.md) D-06）
-> **状态**：**M5 已完成（2026-11-28）**，下一步 M6（配置）
+> **状态**：**M6 已完成（2026-11-28）**，下一步 M7（MCP，可选）
 > **日期**：2026-11-28
 
 ---
@@ -76,7 +76,7 @@ app greet --help --json
 - **错误契约**：`RunesHelaError`（`code`/`message`/`hint`/`nextSteps`/`docsUrl`/`exitCode`），文本与 JSON 两种渲染；数据走 stdout，诊断走 stderr。
 - **安全与终端**：`[Secret]` 在帮助/错误中脱敏；`NO_COLOR`/`TERM=dumb`/非 TTY 自动去色；帮助不含 ANSI。
 - **DI**：命令无无参构造时，生成器通过 `IServiceProvider` 解析构造参数（`RunAsync(args, services)`）。
-- **诊断**：`RHL001`–`RHL036` 编译期诊断，见 [errors.md](./docs/errors.md)。
+- **诊断**：`RHL001`–`RHL040` 编译期诊断，见 [errors.md](./docs/errors.md)。
 
 ### M3 已具备的能力
 
@@ -105,6 +105,17 @@ app greet --help --json
 - **产物一致性**：help、describe、completion、docs 同源；集成测试逐项比对选项集合与命令集合，防止漂移。
 - **保留名保护**：`describe`/`completion`/`docs`/`man`/`__complete` 被注册为保留命令名（RHL025）。
 
+### M6 已具备的能力（配置）
+
+- **优先级**：CLI > ENV > JSON 配置文件 > 属性默认值；CLI 显式空字符串也覆盖其他来源。
+- **配置键**：默认 `command.path.option-name`（如 `deploy.environment`），可用 `[Option(Config = "auth.token")]` 覆盖；重复键报 RHL016，非法键报 RHL040。
+- **JSON 解析**：`System.Text.Json.JsonDocument`，支持点路径嵌套、标量数组与 `"a,b"` 逗号串，零反射、AOT 安全。
+- **显式配置源**：`--config <PATH>`（可放在命令前后）与 `RHL_CONFIG`；显式文件缺失/非法 → 退出码 3（`RHL_CONFIG_NOT_FOUND` / `RHL_CONFIG_INVALID` / `RHL_CONFIG_INVALID_VALUE`），错误信息不含配置值。
+- **隐式发现（opt-in）**：`[assembly: RunesHelaConfigFile]` 后按当前目录 `appsettings.json` → `~/.config/<app>/appsettings.json` 查找；未启用时保持绑定热路径零 IO、零分配（AC-04）。
+- **ENV 约定**：未显式设置 `Env` 时按 `APP_COMMAND_OPTION` 生成（如 `AOTCLI_GREET_TEXT`）；布尔接受 `1/0`、`true/false`、`yes/no`、`on/off`。
+- **Schema**：`app schema`（兼容 `app schema --config`）输出 JSON Schema 2020-12，键/类型/默认值与 `describe` 一致；`[Secret]` 不输出默认值。
+- **脱敏**：配置/ENV/CLI 的密钥值在错误与 JSON 中均为 `***` 或完全不出现；Unix 下世界可读且含敏感键的配置文件给出警告（`RHL_NO_CONFIG_WARNINGS=1` 可关闭）。
+
 ---
 
 ## 文档地图
@@ -123,7 +134,8 @@ app greet --help --json
 | 09 | [M3 基准报告](./docs/benchmarks/M3-基准报告.md) | 热路径 0 B、性能门禁、生成器 no-op、AOT/Trim/R2R 矩阵 | 开发/评审 | ✅ M3 通过 |
 | 10 | [M4 基准报告](./docs/benchmarks/M4-基准报告.md) | Agent 契约：非 TTY、错误建议、破坏性守卫、退出码、EPIPE、过滤器 | 开发/评审 | ✅ M4 通过 |
 | 11 | [M5 基准报告](./docs/benchmarks/M5-基准报告.md) | 四 shell 补全、动态补全、Man/Markdown、产物一致性 | 开发/评审 | ✅ M5 通过 |
-| 12 | [错误码与诊断](./docs/errors.md) | 运行时 `RHL_*` 错误码、`RHLxxx` 诊断码、退出码矩阵 | 开发/使用 | ✅ 随 M5 更新 |
+| 12 | [M6 基准报告](./docs/benchmarks/M6-基准报告.md) | 配置优先级、JSON/ENV、Schema、脱敏与零分配快路径 | 开发/评审 | ✅ M6 通过 |
+| 13 | [错误码与诊断](./docs/errors.md) | 运行时 `RHL_*` 错误码、`RHLxxx` 诊断码、退出码矩阵 | 开发/使用 | ✅ 随 M6 更新 |
 
 ---
 
@@ -186,7 +198,7 @@ app greet --help --json
 
 ## 边界声明
 
-- 当前已完成 **M5**（2026-11-28）：四 shell 静态补全、动态补全、Markdown/Man 文档、产物一致性与保留名保护；下一步 M6。
+- 当前已完成 **M6**（2026-11-28）：JSON 配置、ENV 约定与优先级、配置 Schema、脱敏与退出码 3；下一步 M7（MCP，可选）。
 - 以上决议已按你的选择写入文档；项目已按决议进入开发。
 
 ---

@@ -23,16 +23,38 @@ public sealed class RunesHelaGenerator : IIncrementalGenerator
             static (attributeContext, cancellationToken) =>
                 CommandModelFactory.Create(attributeContext, cancellationToken));
 
+        var configFile = context.CompilationProvider.Select(
+            static (compilation, _) => ReadConfigFileName(compilation));
+
         context.RegisterSourceOutput(
-            candidates.Collect(),
-            static (sourceContext, items) => Emit(sourceContext, items));
+            candidates.Collect().Combine(configFile),
+            static (sourceContext, items) => Emit(sourceContext, items.Left, items.Right));
     }
 
-    private static void Emit(SourceProductionContext context, ImmutableArray<CommandCandidate> candidates)
+    private static string? ReadConfigFileName(Compilation compilation)
+    {
+        foreach (var attribute in compilation.Assembly.GetAttributes())
+        {
+            if (attribute.AttributeClass?.ToDisplayString() != "RunesHela.RunesHelaConfigFileAttribute")
+            {
+                continue;
+            }
+
+            var name = attribute.ConstructorArguments.Length > 0
+                ? attribute.ConstructorArguments[0].Value as string
+                : null;
+
+            return string.IsNullOrWhiteSpace(name) ? "appsettings.json" : name!.Trim();
+        }
+
+        return null;
+    }
+
+    private static void Emit(SourceProductionContext context, ImmutableArray<CommandCandidate> candidates, string? configFileName)
     {
         try
         {
-            EmitCore(context, candidates);
+            EmitCore(context, candidates, configFileName);
         }
         catch (Exception exception)
         {
@@ -49,7 +71,10 @@ public sealed class RunesHelaGenerator : IIncrementalGenerator
         }
     }
 
-    private static void EmitCore(SourceProductionContext context, ImmutableArray<CommandCandidate> candidates)
+    private static void EmitCore(
+        SourceProductionContext context,
+        ImmutableArray<CommandCandidate> candidates,
+        string? configFileName)
     {
         var models = new List<CommandModel>();
 
@@ -109,7 +134,7 @@ public sealed class RunesHelaGenerator : IIncrementalGenerator
         }
 
         var appName = models.Count > 0 ? models[0].AppName : "app";
-        var source = Emitter.Emit(appName, roots);
+        var source = Emitter.Emit(appName, roots, configFileName);
 
         context.AddSource("RunesHela.Entry.g.cs", SourceText.From(source, Encoding.UTF8));
     }

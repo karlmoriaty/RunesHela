@@ -84,6 +84,39 @@ internal static class Names
         return true;
     }
 
+    public static bool IsValidConfigKey(string key)
+    {
+        if (key.Length == 0)
+        {
+            return false;
+        }
+
+        var segmentLength = 0;
+
+        foreach (var c in key)
+        {
+            if (c == '.')
+            {
+                if (segmentLength == 0)
+                {
+                    return false;
+                }
+
+                segmentLength = 0;
+                continue;
+            }
+
+            if (!(char.IsLetterOrDigit(c) || c == '-' || c == '_'))
+            {
+                return false;
+            }
+
+            segmentLength++;
+        }
+
+        return segmentLength > 0;
+    }
+
     public static string ValueNameOf(TypeModel type)
     {
         if (type.Kind == TypeKind.Array && type.ElementType is not null)

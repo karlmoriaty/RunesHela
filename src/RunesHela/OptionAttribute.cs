@@ -44,8 +44,16 @@ public sealed class OptionAttribute : Attribute
 
     /// <summary>
     /// Gets or sets the environment variable read when the option is not supplied.
+    /// When omitted, the variable name follows the <c>APP_COMMAND_OPTION</c> convention.
     /// </summary>
     public string? Env { get; set; }
+
+    /// <summary>
+    /// Gets or sets the configuration file key read when neither the command line nor the environment supplies a value.
+    /// Use a dot path such as <c>deploy.environment</c>. When omitted, the key is
+    /// <c>command.path.option-name</c>.
+    /// </summary>
+    public string? Config { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the option must be supplied.

@@ -18,6 +18,7 @@ internal static class CommandModelFactory
         "completion",
         "docs",
         "man",
+        "schema",
         "__complete",
     };
 

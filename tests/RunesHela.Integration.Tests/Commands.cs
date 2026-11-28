@@ -1,5 +1,7 @@
 using RunesHela;
 
+[assembly: RunesHelaConfigFile]
+
 namespace RunesHela.Integration.Tests;
 
 public enum Mode

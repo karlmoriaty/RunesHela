@@ -639,6 +639,313 @@ public sealed class CliBehaviorTests
         Assert.DoesNotContain("--name", options.Out);
     }
 
+    [Fact]
+    public async Task ReadsConfigurationFileValues()
+    {
+        var path = CreateConfigFile("""
+            {
+              "greet": {
+                "count": 2,
+                "loud": true,
+                "mode": "safe",
+                "tags": ["a", "b"]
+              }
+            }
+            """);
+
+        try
+        {
+            var result = await Cli.RunAsync(new[] { "greet", "--config", path });
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal("HELLO, WORLD!\nHELLO, WORLD!\nmode=safe\ntags=a,b\n", result.NormalizedOut);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task CommandLineAndEnvironmentOverrideConfiguration()
+    {
+        var path = CreateConfigFile("""{ "greet": { "count": 4 } }""");
+        var previous = Environment.GetEnvironmentVariable("RHL_GREET_COUNT");
+
+        try
+        {
+            Environment.SetEnvironmentVariable("RHL_GREET_COUNT", null);
+
+            var fromConfig = await Cli.RunAsync(new[] { "greet", "--config", path });
+            Assert.Equal(4, fromConfig.NormalizedOut.Split("Hello, world!").Length - 1);
+
+            Environment.SetEnvironmentVariable("RHL_GREET_COUNT", "2");
+            var fromEnvironment = await Cli.RunAsync(new[] { "greet", "--config", path });
+            Assert.Equal(2, fromEnvironment.NormalizedOut.Split("Hello, world!").Length - 1);
+
+            var fromCommandLine = await Cli.RunAsync(new[] { "greet", "--config", path, "--count", "1" });
+            Assert.Equal(1, fromCommandLine.NormalizedOut.Split("Hello, world!").Length - 1);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("RHL_GREET_COUNT", previous);
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task DiscoversConfigurationInCurrentDirectory()
+    {
+        var directory = CreateTemporaryDirectory();
+        var previousDirectory = Directory.GetCurrentDirectory();
+        var previousConfig = Environment.GetEnvironmentVariable("RHL_CONFIG");
+
+        try
+        {
+            File.WriteAllText(Path.Combine(directory, "appsettings.json"), """{ "greet": { "count": 2 } }""");
+            Environment.SetEnvironmentVariable("RHL_CONFIG", null);
+            Directory.SetCurrentDirectory(directory);
+
+            var result = await Cli.RunAsync(new[] { "greet" });
+            Assert.Equal(2, result.NormalizedOut.Split("Hello, world!").Length - 1);
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(previousDirectory);
+            Environment.SetEnvironmentVariable("RHL_CONFIG", previousConfig);
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task ReadsConfigurationPathFromEnvironment()
+    {
+        var path = CreateConfigFile("""{ "greet": { "count": 3 } }""");
+        var previous = Environment.GetEnvironmentVariable("RHL_CONFIG");
+
+        try
+        {
+            Environment.SetEnvironmentVariable("RHL_CONFIG", path);
+
+            var result = await Cli.RunAsync(new[] { "greet" });
+            Assert.Equal(3, result.NormalizedOut.Split("Hello, world!").Length - 1);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("RHL_CONFIG", previous);
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task MissingExplicitConfigurationFileReturnsConfigurationExitCode()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "runeshela-missing-" + Guid.NewGuid().ToString("N") + ".json");
+        var result = await Cli.RunAsync(new[] { "greet", "--config", path, "--json" });
+
+        Assert.Equal(3, result.ExitCode);
+        Assert.Equal(string.Empty, result.Out);
+
+        using var document = JsonDocument.Parse(result.Error);
+        var error = document.RootElement.GetProperty("error");
+
+        Assert.Equal("RHL_CONFIG_NOT_FOUND", error.GetProperty("code").GetString());
+        Assert.Equal(3, error.GetProperty("exitCode").GetInt32());
+        Assert.Equal("greet", error.GetProperty("command").GetString());
+    }
+
+    [Fact]
+    public async Task InvalidConfigurationFileIsReportedWithoutLeakingValues()
+    {
+        var path = CreateConfigFile("""{ "greet": { "token": "supersecret" """);
+        var result = await Cli.RunAsync(new[] { "greet", "--config", path, "--json" });
+
+        try
+        {
+            Assert.Equal(3, result.ExitCode);
+
+            using var document = JsonDocument.Parse(result.Error);
+            var error = document.RootElement.GetProperty("error");
+
+            Assert.Equal("RHL_CONFIG_INVALID", error.GetProperty("code").GetString());
+            Assert.DoesNotContain("supersecret", result.NormalizedError);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task InvalidConfigurationValueIsRedacted()
+    {
+        var path = CreateConfigFile("""{ "greet": { "pin": "not-a-number" } }""");
+        var result = await Cli.RunAsync(new[] { "greet", "--config", path, "--json" });
+
+        try
+        {
+            Assert.Equal(3, result.ExitCode);
+
+            using var document = JsonDocument.Parse(result.Error);
+            var error = document.RootElement.GetProperty("error");
+
+            Assert.Equal("RHL_CONFIG_INVALID_VALUE", error.GetProperty("code").GetString());
+            Assert.Contains("greet.pin", error.GetProperty("message").GetString());
+            Assert.DoesNotContain("not-a-number", result.NormalizedError);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task ConfigurationUsesNestedDotPaths()
+    {
+        var path = CreateConfigFile("""{ "parent": { "child": { "leaf": { "value": 9 } } } }""");
+
+        try
+        {
+            var result = await Cli.RunAsync(new[] { "parent", "child", "leaf", "--config", path });
+            Assert.Equal("leaf=9\n", result.NormalizedOut);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task EnvironmentPrefixConventionBindsValues()
+    {
+        const string name = "RUNESHELA_INTEGRATION_TESTS_GREET_LOUD";
+        var previous = Environment.GetEnvironmentVariable(name);
+
+        try
+        {
+            Environment.SetEnvironmentVariable(name, "yes");
+
+            var enabled = await Cli.RunAsync(new[] { "greet" });
+            Assert.Equal("HELLO, WORLD!\n", enabled.NormalizedOut);
+
+            Environment.SetEnvironmentVariable(name, "maybe");
+
+            var invalid = await Cli.RunAsync(new[] { "greet" });
+            Assert.Equal(2, invalid.ExitCode);
+            Assert.Contains("Invalid value 'maybe' for option '--loud'.", invalid.NormalizedError);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(name, previous);
+        }
+    }
+
+    [Fact]
+    public async Task ConfigurationAcceptsScalarArrays()
+    {
+        var path = CreateConfigFile("""{ "greet": { "tags": "x,y" } }""");
+
+        try
+        {
+            var result = await Cli.RunAsync(new[] { "greet", "--config", path });
+            Assert.Contains("tags=x,y", result.NormalizedOut);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task SchemaMatchesDescribeConfigurationKeys()
+    {
+        var schema = await Cli.RunAsync(new[] { "schema" });
+        var schemaWithFlag = await Cli.RunAsync(new[] { "schema", "--config" });
+        var describe = await Cli.RunAsync(new[] { "describe" });
+
+        Assert.Equal(0, schema.ExitCode);
+        Assert.Equal(schema.NormalizedOut, schemaWithFlag.NormalizedOut);
+
+        using var schemaDocument = JsonDocument.Parse(schema.Out);
+        using var describeDocument = JsonDocument.Parse(describe.Out);
+
+        Assert.Equal("config", schemaDocument.RootElement.GetProperty("kind").GetString());
+        Assert.Equal("1.0", schemaDocument.RootElement.GetProperty("schemaVersion").GetString());
+
+        var schemaKeys = new List<string>();
+        CollectSchemaKeys(schemaDocument.RootElement.GetProperty("properties"), string.Empty, schemaKeys);
+
+        var describeKeys = new List<string>();
+        CollectDescribeKeys(describeDocument.RootElement.GetProperty("commands"), describeKeys);
+
+        schemaKeys.Sort(StringComparer.Ordinal);
+        describeKeys.Sort(StringComparer.Ordinal);
+        Assert.Equal(describeKeys, schemaKeys);
+
+        var greet = schemaDocument.RootElement.GetProperty("properties").GetProperty("greet").GetProperty("properties");
+        Assert.Equal("integer", greet.GetProperty("count").GetProperty("type").GetString());
+        Assert.Equal(1, greet.GetProperty("count").GetProperty("default").GetInt32());
+        Assert.Equal("boolean", greet.GetProperty("loud").GetProperty("type").GetString());
+        Assert.Contains(
+            greet.GetProperty("mode").GetProperty("enum").EnumerateArray(),
+            static value => value.GetString() == "Safe");
+    }
+
+    [Fact]
+    public async Task HelpListsConfigurationOption()
+    {
+        var result = await Cli.RunAsync(new[] { "greet", "--help" });
+
+        Assert.Contains("--config <PATH>", result.NormalizedOut);
+        Assert.Contains("Config", (await Cli.RunAsync(new[] { "docs" })).NormalizedOut);
+    }
+
+    private static string CreateConfigFile(string json)
+    {
+        var path = Path.Combine(Path.GetTempPath(), "runeshela-config-" + Guid.NewGuid().ToString("N") + ".json");
+        File.WriteAllText(path, json);
+        return path;
+    }
+
+    private static string CreateTemporaryDirectory()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "runeshela-config-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(path);
+        return path;
+    }
+
+    private static void CollectSchemaKeys(JsonElement properties, string prefix, List<string> keys)
+    {
+        foreach (var property in properties.EnumerateObject())
+        {
+            var key = prefix.Length == 0 ? property.Name : prefix + "." + property.Name;
+
+            if (property.Value.TryGetProperty("type", out var type) && type.GetString() == "object")
+            {
+                CollectSchemaKeys(property.Value.GetProperty("properties"), key, keys);
+                continue;
+            }
+
+            keys.Add(key);
+        }
+    }
+
+    private static void CollectDescribeKeys(JsonElement commands, List<string> keys)
+    {
+        foreach (var command in commands.EnumerateArray())
+        {
+            foreach (var option in command.GetProperty("options").EnumerateArray())
+            {
+                if (option.TryGetProperty("configKey", out var key) && key.ValueKind == JsonValueKind.String)
+                {
+                    keys.Add(key.GetString()!);
+                }
+            }
+
+            CollectDescribeKeys(command.GetProperty("commands"), keys);
+        }
+    }
+
     private static JsonElement FindCommand(JsonElement commands, string name)
     {
         foreach (var command in commands.EnumerateArray())

@@ -10,21 +10,22 @@ internal static class __RunesHelaEntry
 {
     private const string AppName = "TestAssembly";
 
-    private const string RootHelpText = "TestAssembly\n\nUsage: TestAssembly <command> [options]\n\nCommands:\n  remote  Manage remotes.\n\nOptions:\n  -h, --help     Show help.\n      --version  Show version.\n\nExit codes:\n  0  Success\n  1  Failure\n  2  Usage error";
-    private const string RootHelpJson = "{\"schemaVersion\":\"1.0\",\"kind\":\"application\",\"name\":\"TestAssembly\",\"path\":\"\",\"description\":null,\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"},{\"name\":\"version\",\"short\":null,\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show version.\"}],\"commands\":[{\"name\":\"remote\",\"aliases\":[],\"description\":\"Manage remotes.\",\"hidden\":false}],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"}]}";
-    private const string DescribeJson = "{\"schemaVersion\":\"1.0\",\"kind\":\"describe\",\"application\":\"TestAssembly\",\"commands\":[{\"name\":\"remote\",\"path\":\"remote\",\"description\":\"Manage remotes.\",\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"},{\"code\":3,\"description\":\"Configuration error\"},{\"code\":4,\"description\":\"Not found\"},{\"code\":5,\"description\":\"Permission denied\"},{\"code\":6,\"description\":\"Conflict\"},{\"code\":7,\"description\":\"Timeout\"},{\"code\":130,\"description\":\"Interrupted\"},{\"code\":141,\"description\":\"Broken pipe\"}],\"commands\":[{\"name\":\"add\",\"path\":\"remote add\",\"description\":\"Add a remote.\",\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"},{\"code\":3,\"description\":\"Configuration error\"},{\"code\":4,\"description\":\"Not found\"},{\"code\":5,\"description\":\"Permission denied\"},{\"code\":6,\"description\":\"Conflict\"},{\"code\":7,\"description\":\"Timeout\"},{\"code\":130,\"description\":\"Interrupted\"},{\"code\":141,\"description\":\"Broken pipe\"}],\"commands\":[]},{\"name\":\"list\",\"path\":\"remote list\",\"description\":\"List remotes.\",\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"},{\"code\":3,\"description\":\"Configuration error\"},{\"code\":4,\"description\":\"Not found\"},{\"code\":5,\"description\":\"Permission denied\"},{\"code\":6,\"description\":\"Conflict\"},{\"code\":7,\"description\":\"Timeout\"},{\"code\":130,\"description\":\"Interrupted\"},{\"code\":141,\"description\":\"Broken pipe\"}],\"commands\":[]}]}]}";
-    private const string CompletionBash = "# bash completion for TestAssembly\n_RunesHela_TestAssembly()\n{\n    local cur=\"${COMP_WORDS[COMP_CWORD]}\"\n    local key=\"\"\n    if [ \"$COMP_CWORD\" -gt 1 ]; then\n        key=\"${COMP_WORDS[*]:1:$((COMP_CWORD-1))}\"\n    fi\n    local candidates=\"\"\n    case \"$key\" in\n        \"\") candidates=\"remote --help --version\" ;;\n        \"remote\") candidates=\"add list --help\" ;;\n        *) candidates=\"\" ;;\n    esac\n    COMPREPLY=( $(compgen -W \"$candidates\" -- \"$cur\") )\n}\ncomplete -F _RunesHela_TestAssembly TestAssembly\n";
-    private const string CompletionZsh = "#compdef TestAssembly\n_RunesHela_TestAssembly()\n{\n    local key=\"${(j: :)words[2,CURRENT-1]}\"\n    local -a candidates\n    case \"$key\" in\n        \"\") candidates=(remote --help --version) ;;\n        \"remote\") candidates=(add list --help) ;;\n        *) candidates=() ;;\n    esac\n    _describe 'values' candidates\n}\ncompdef _RunesHela_TestAssembly TestAssembly\n";
+    private const string RootHelpText = "TestAssembly\n\nUsage: TestAssembly <command> [options]\n\nCommands:\n  remote  Manage remotes.\n\nOptions:\n      --config <PATH>  Read configuration from PATH.\n  -h, --help           Show help.\n      --version        Show version.\n\nExit codes:\n  0  Success\n  1  Failure\n  2  Usage error";
+    private const string RootHelpJson = "{\"schemaVersion\":\"1.0\",\"kind\":\"application\",\"name\":\"TestAssembly\",\"path\":\"\",\"description\":null,\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"config\",\"short\":null,\"aliases\":[],\"type\":\"string\",\"valueName\":\"PATH\",\"flag\":false,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":\"RHL_CONFIG\",\"secret\":false,\"hidden\":false,\"description\":\"Read configuration from PATH.\"},{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"},{\"name\":\"version\",\"short\":null,\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show version.\"}],\"commands\":[{\"name\":\"remote\",\"aliases\":[],\"description\":\"Manage remotes.\",\"hidden\":false}],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"}]}";
+    private const string DescribeJson = "{\"schemaVersion\":\"1.0\",\"kind\":\"describe\",\"application\":\"TestAssembly\",\"commands\":[{\"name\":\"remote\",\"path\":\"remote\",\"description\":\"Manage remotes.\",\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"config\",\"short\":null,\"aliases\":[],\"type\":\"string\",\"valueName\":\"PATH\",\"flag\":false,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":\"RHL_CONFIG\",\"secret\":false,\"hidden\":false,\"description\":\"Read configuration from PATH.\"},{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"},{\"code\":3,\"description\":\"Configuration error\"},{\"code\":4,\"description\":\"Not found\"},{\"code\":5,\"description\":\"Permission denied\"},{\"code\":6,\"description\":\"Conflict\"},{\"code\":7,\"description\":\"Timeout\"},{\"code\":130,\"description\":\"Interrupted\"},{\"code\":141,\"description\":\"Broken pipe\"}],\"commands\":[{\"name\":\"add\",\"path\":\"remote add\",\"description\":\"Add a remote.\",\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"config\",\"short\":null,\"aliases\":[],\"type\":\"string\",\"valueName\":\"PATH\",\"flag\":false,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":\"RHL_CONFIG\",\"secret\":false,\"hidden\":false,\"description\":\"Read configuration from PATH.\"},{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"},{\"code\":3,\"description\":\"Configuration error\"},{\"code\":4,\"description\":\"Not found\"},{\"code\":5,\"description\":\"Permission denied\"},{\"code\":6,\"description\":\"Conflict\"},{\"code\":7,\"description\":\"Timeout\"},{\"code\":130,\"description\":\"Interrupted\"},{\"code\":141,\"description\":\"Broken pipe\"}],\"commands\":[]},{\"name\":\"list\",\"path\":\"remote list\",\"description\":\"List remotes.\",\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"config\",\"short\":null,\"aliases\":[],\"type\":\"string\",\"valueName\":\"PATH\",\"flag\":false,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":\"RHL_CONFIG\",\"secret\":false,\"hidden\":false,\"description\":\"Read configuration from PATH.\"},{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"},{\"code\":3,\"description\":\"Configuration error\"},{\"code\":4,\"description\":\"Not found\"},{\"code\":5,\"description\":\"Permission denied\"},{\"code\":6,\"description\":\"Conflict\"},{\"code\":7,\"description\":\"Timeout\"},{\"code\":130,\"description\":\"Interrupted\"},{\"code\":141,\"description\":\"Broken pipe\"}],\"commands\":[]}]}]}";
+    private const string CompletionBash = "# bash completion for TestAssembly\n_RunesHela_TestAssembly()\n{\n    local cur=\"${COMP_WORDS[COMP_CWORD]}\"\n    local key=\"\"\n    if [ \"$COMP_CWORD\" -gt 1 ]; then\n        key=\"${COMP_WORDS[*]:1:$((COMP_CWORD-1))}\"\n    fi\n    local candidates=\"\"\n    case \"$key\" in\n        \"\") candidates=\"remote --config --help --version\" ;;\n        \"remote\") candidates=\"add list --config --help\" ;;\n        *) candidates=\"\" ;;\n    esac\n    COMPREPLY=( $(compgen -W \"$candidates\" -- \"$cur\") )\n}\ncomplete -F _RunesHela_TestAssembly TestAssembly\n";
+    private const string CompletionZsh = "#compdef TestAssembly\n_RunesHela_TestAssembly()\n{\n    local key=\"${(j: :)words[2,CURRENT-1]}\"\n    local -a candidates\n    case \"$key\" in\n        \"\") candidates=(remote --config --help --version) ;;\n        \"remote\") candidates=(add list --config --help) ;;\n        *) candidates=() ;;\n    esac\n    _describe 'values' candidates\n}\ncompdef _RunesHela_TestAssembly TestAssembly\n";
     private const string CompletionFish = "# fish completion for TestAssembly\ncomplete -c TestAssembly -f\ncomplete -c TestAssembly -n '__fish_use_subcommand' -a 'remote' -d 'Manage remotes.'\ncomplete -c TestAssembly -n '__fish_seen_subcommand_from remote' -a 'add' -d 'Add a remote.'\ncomplete -c TestAssembly -n '__fish_seen_subcommand_from remote' -a 'list' -d 'List remotes.'\n";
-    private const string CompletionPowerShell = "# PowerShell completion for TestAssembly\nRegister-ArgumentCompleter -Native -CommandName 'TestAssembly' -ScriptBlock {\n    param($wordToComplete, $commandAst, $cursorPosition)\n    $words = $commandAst.CommandElements | ForEach-Object { $_.ToString() }\n    $key = ''\n    if ($words.Count -gt 2) {\n        $key = ($words[1..($words.Count - 2)] -join ' ')\n    }\n    $candidates = switch ($key) {\n        '' { @('remote', '--help', '--version') }\n        'remote' { @('add', 'list', '--help') }\n        default { @() }\n    }\n    $candidates | Where-Object { $_ -like \"$wordToComplete*\" } | ForEach-Object {\n        [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)\n    }\n}\n";
-    private const string DocsMarkdown = "# TestAssembly\n\nGenerated by RunesHela. Do not edit by hand.\n\n## remote\n\nManage remotes.\n\n**Usage:** `TestAssembly remote [options]`\n\n### Options\n\n| Option | Type | Required | Default | Env | Description |\n| --- | --- | --- | --- | --- | --- |\n\n### Commands\n\n- `add` — Add a remote.\n- `list` — List remotes.\n\n### remote add\n\nAdd a remote.\n\n**Usage:** `TestAssembly remote add [options]`\n\n### Options\n\n| Option | Type | Required | Default | Env | Description |\n| --- | --- | --- | --- | --- | --- |\n\n### remote list\n\nList remotes.\n\n**Usage:** `TestAssembly remote list [options]`\n\n### Options\n\n| Option | Type | Required | Default | Env | Description |\n| --- | --- | --- | --- | --- | --- |\n\n";
+    private const string CompletionPowerShell = "# PowerShell completion for TestAssembly\nRegister-ArgumentCompleter -Native -CommandName 'TestAssembly' -ScriptBlock {\n    param($wordToComplete, $commandAst, $cursorPosition)\n    $words = $commandAst.CommandElements | ForEach-Object { $_.ToString() }\n    $key = ''\n    if ($words.Count -gt 2) {\n        $key = ($words[1..($words.Count - 2)] -join ' ')\n    }\n    $candidates = switch ($key) {\n        '' { @('remote', '--config', '--help', '--version') }\n        'remote' { @('add', 'list', '--config', '--help') }\n        default { @() }\n    }\n    $candidates | Where-Object { $_ -like \"$wordToComplete*\" } | ForEach-Object {\n        [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)\n    }\n}\n";
+    private const string DocsMarkdown = "# TestAssembly\n\nGenerated by RunesHela. Do not edit by hand.\n\n## remote\n\nManage remotes.\n\n**Usage:** `TestAssembly remote [options]`\n\n### Options\n\n| Option | Type | Required | Default | Env | Config | Description |\n| --- | --- | --- | --- | --- | --- | --- |\n| `--config <PATH>` | `string` | no | | `RHL_CONFIG` | | Read configuration from PATH. |\n\n### Commands\n\n- `add` — Add a remote.\n- `list` — List remotes.\n\n### remote add\n\nAdd a remote.\n\n**Usage:** `TestAssembly remote add [options]`\n\n### Options\n\n| Option | Type | Required | Default | Env | Config | Description |\n| --- | --- | --- | --- | --- | --- | --- |\n| `--config <PATH>` | `string` | no | | `RHL_CONFIG` | | Read configuration from PATH. |\n\n### remote list\n\nList remotes.\n\n**Usage:** `TestAssembly remote list [options]`\n\n### Options\n\n| Option | Type | Required | Default | Env | Config | Description |\n| --- | --- | --- | --- | --- | --- | --- |\n| `--config <PATH>` | `string` | no | | `RHL_CONFIG` | | Read configuration from PATH. |\n\n";
     private const string ManRoff = ".TH \"TESTASSEMBLY\" \"1\" \"\" \"TestAssembly\" \"TestAssembly Manual\"\n.SH NAME\nTestAssembly \\- command-line application\n.SH SYNOPSIS\n.B TestAssembly\n[\\fIcommand\\fR] [\\fIoptions\\fR]\n.SH COMMANDS\n.TP\n.B remote\nManage remotes.\n.TP\n.B remote add\nAdd a remote.\n.TP\n.B remote list\nList remotes.\n";
-    private const string HelpText0 = "Usage: TestAssembly remote [command] [options]\n\nManage remotes.\n\nCommands:\n  add   Add a remote.\n  list  List remotes.\n\nOptions:\n  -h, --help  Show help.\n\nExit codes:\n  0  Success\n  1  Failure\n  2  Usage error";
-    private const string HelpJson0 = "{\"schemaVersion\":\"1.0\",\"kind\":\"command\",\"name\":\"remote\",\"path\":\"remote\",\"description\":\"Manage remotes.\",\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"commands\":[{\"name\":\"add\",\"aliases\":[],\"description\":\"Add a remote.\",\"hidden\":false},{\"name\":\"list\",\"aliases\":[],\"description\":\"List remotes.\",\"hidden\":false}],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"}]}";
-    private const string HelpText1 = "Usage: TestAssembly remote add [options]\n\nAdd a remote.\n\nOptions:\n  -h, --help  Show help.\n\nExit codes:\n  0  Success\n  1  Failure\n  2  Usage error";
-    private const string HelpJson1 = "{\"schemaVersion\":\"1.0\",\"kind\":\"command\",\"name\":\"add\",\"path\":\"remote add\",\"description\":\"Add a remote.\",\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"commands\":[],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"}]}";
-    private const string HelpText2 = "Usage: TestAssembly remote list [options]\n\nList remotes.\n\nOptions:\n  -h, --help  Show help.\n\nExit codes:\n  0  Success\n  1  Failure\n  2  Usage error";
-    private const string HelpJson2 = "{\"schemaVersion\":\"1.0\",\"kind\":\"command\",\"name\":\"list\",\"path\":\"remote list\",\"description\":\"List remotes.\",\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"commands\":[],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"}]}";
+    private const string ConfigSchema = "{\"schemaVersion\":\"1.0\",\"kind\":\"config\",\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"$id\":\"TestAssembly.config.schema.json\",\"title\":\"TestAssembly configuration\",\"type\":\"object\",\"additionalProperties\":true,\"properties\":{}}";
+    private const string HelpText0 = "Usage: TestAssembly remote [command] [options]\n\nManage remotes.\n\nCommands:\n  add   Add a remote.\n  list  List remotes.\n\nOptions:\n      --config <PATH>  Read configuration from PATH.\n  -h, --help           Show help.\n\nExit codes:\n  0  Success\n  1  Failure\n  2  Usage error";
+    private const string HelpJson0 = "{\"schemaVersion\":\"1.0\",\"kind\":\"command\",\"name\":\"remote\",\"path\":\"remote\",\"description\":\"Manage remotes.\",\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"config\",\"short\":null,\"aliases\":[],\"type\":\"string\",\"valueName\":\"PATH\",\"flag\":false,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":\"RHL_CONFIG\",\"secret\":false,\"hidden\":false,\"description\":\"Read configuration from PATH.\"},{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"commands\":[{\"name\":\"add\",\"aliases\":[],\"description\":\"Add a remote.\",\"hidden\":false},{\"name\":\"list\",\"aliases\":[],\"description\":\"List remotes.\",\"hidden\":false}],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"}]}";
+    private const string HelpText1 = "Usage: TestAssembly remote add [options]\n\nAdd a remote.\n\nOptions:\n      --config <PATH>  Read configuration from PATH.\n  -h, --help           Show help.\n\nExit codes:\n  0  Success\n  1  Failure\n  2  Usage error";
+    private const string HelpJson1 = "{\"schemaVersion\":\"1.0\",\"kind\":\"command\",\"name\":\"add\",\"path\":\"remote add\",\"description\":\"Add a remote.\",\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"config\",\"short\":null,\"aliases\":[],\"type\":\"string\",\"valueName\":\"PATH\",\"flag\":false,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":\"RHL_CONFIG\",\"secret\":false,\"hidden\":false,\"description\":\"Read configuration from PATH.\"},{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"commands\":[],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"}]}";
+    private const string HelpText2 = "Usage: TestAssembly remote list [options]\n\nList remotes.\n\nOptions:\n      --config <PATH>  Read configuration from PATH.\n  -h, --help           Show help.\n\nExit codes:\n  0  Success\n  1  Failure\n  2  Usage error";
+    private const string HelpJson2 = "{\"schemaVersion\":\"1.0\",\"kind\":\"command\",\"name\":\"list\",\"path\":\"remote list\",\"description\":\"List remotes.\",\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"config\",\"short\":null,\"aliases\":[],\"type\":\"string\",\"valueName\":\"PATH\",\"flag\":false,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":\"RHL_CONFIG\",\"secret\":false,\"hidden\":false,\"description\":\"Read configuration from PATH.\"},{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"commands\":[],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"}]}";
 
     private static readonly string[] CommandCandidates =
     [
@@ -34,6 +35,7 @@ internal static class __RunesHelaEntry
     private static readonly string[] CompletionRoot =
     [
         "remote",
+        "--config",
         "--help",
         "--version",
     ];
@@ -42,6 +44,7 @@ internal static class __RunesHelaEntry
     [
         "add",
         "list",
+        "--config",
         "--help",
     ];
 
@@ -53,11 +56,13 @@ internal static class __RunesHelaEntry
 
     private static readonly string[] Completion1 =
     [
+        "--config",
         "--help",
     ];
 
     private static readonly string[] Completion2 =
     [
+        "--config",
         "--help",
     ];
 
@@ -70,6 +75,7 @@ internal static class __RunesHelaEntry
     {
         var json = global::RunesHela.RunesHelaOutputOptions.WantsJson(args);
         var commandIndex = -1;
+        string? configPath = null;
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -105,6 +111,23 @@ internal static class __RunesHelaEntry
                 continue;
             }
 
+            if (arg == "--config")
+            {
+                if (i + 1 >= args.Length || args[i + 1].Length == 0)
+                    return new ValueTask<int>(global::RunesHela.RunesHelaErrors.MissingValue(string.Empty, "config", json));
+                configPath = args[i + 1];
+                i++;
+                continue;
+            }
+
+            if (arg.StartsWith("--config=", StringComparison.Ordinal))
+            {
+                if (arg.Length == 9)
+                    return new ValueTask<int>(global::RunesHela.RunesHelaErrors.MissingValue(string.Empty, "config", json));
+                configPath = arg.Substring(9);
+                continue;
+            }
+
             if (arg.Length > 2 && arg[0] == '-' && arg[1] == '-' && global::RunesHela.RunesHelaOutputOptions.IsGlobalFlag(arg.AsSpan(2))) continue;
             if (arg == "-y") continue;
 
@@ -116,6 +139,12 @@ internal static class __RunesHelaEntry
         {
             WriteRootHelp(json);
             return new ValueTask<int>(0);
+        }
+
+        if (configPath is null)
+        {
+            var environmentConfig = global::System.Environment.GetEnvironmentVariable("RHL_CONFIG");
+            if (!string.IsNullOrEmpty(environmentConfig)) configPath = environmentConfig;
         }
 
         var command = args[commandIndex];
@@ -143,6 +172,12 @@ internal static class __RunesHelaEntry
             return new ValueTask<int>(0);
         }
 
+        if (command == "schema")
+        {
+            global::RunesHela.RunesHelaConsole.Current.Out.WriteLine(ConfigSchema);
+            return new ValueTask<int>(0);
+        }
+
         if (command == "__complete")
         {
             return new ValueTask<int>(Complete(args.Slice(commandIndex + 1)));
@@ -151,13 +186,13 @@ internal static class __RunesHelaEntry
         switch (command)
         {
             case "remote":
-                return RunNode0Async(args.Slice(commandIndex + 1), json, services, cancellationToken);
+                return RunNode0Async(args.Slice(commandIndex + 1), json, services, cancellationToken, configPath);
             default:
                 return new ValueTask<int>(global::RunesHela.RunesHelaErrors.UnknownCommand(command, AppName, json, CommandCandidates));
         }
     }
 
-    private static ValueTask<int> RunNode0Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken)
+    private static ValueTask<int> RunNode0Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken, string? configPath)
     {
         if (args.Length > 0 && (args[0] == "-h" || args[0] == "--help"))
         {
@@ -170,9 +205,9 @@ internal static class __RunesHelaEntry
             switch (args[0])
             {
                 case "add":
-                    return RunNode1Async(args.Slice(1), json, services, cancellationToken);
+                    return RunNode1Async(args.Slice(1), json, services, cancellationToken, configPath);
                 case "list":
-                    return RunNode2Async(args.Slice(1), json, services, cancellationToken);
+                    return RunNode2Async(args.Slice(1), json, services, cancellationToken, configPath);
             }
         }
 
@@ -185,7 +220,7 @@ internal static class __RunesHelaEntry
         return new ValueTask<int>(global::RunesHela.RunesHelaErrors.UnknownSubcommand("remote", args[0], json, SubcommandCandidates0));
     }
 
-    private static ValueTask<int> RunNode1Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken)
+    private static ValueTask<int> RunNode1Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken, string? configPath)
     {
         if (global::RunesHela.RunesHelaOutputOptions.WantsHelp(args))
         {
@@ -193,12 +228,12 @@ internal static class __RunesHelaEntry
             return new ValueTask<int>(0);
         }
 
-        return InvokeNode1Async(args, json, services, cancellationToken);
+        return InvokeNode1Async(args, json, services, cancellationToken, configPath);
     }
 
-    private static ValueTask<int> InvokeNode1Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken)
+    private static ValueTask<int> InvokeNode1Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken, string? configPath)
     {
-        var bindResult = BindNode1(args, services, cancellationToken, json, out var command);
+        var bindResult = BindNode1(args, services, cancellationToken, json, configPath, out var command);
         if (bindResult != 0)
         {
             return new ValueTask<int>(bindResult);
@@ -208,7 +243,7 @@ internal static class __RunesHelaEntry
         return new ValueTask<int>(0);
     }
 
-    private static int BindNode1(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, bool json, out global::Demo.RemoteCommand.AddCommand command)
+    private static int BindNode1(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, bool json, string? configPath, out global::Demo.RemoteCommand.AddCommand command)
     {
         command = null!;
         const string commandPath = "remote add";
@@ -219,6 +254,12 @@ internal static class __RunesHelaEntry
             if (token.Kind == global::RunesHela.Parsing.CommandLineTokenKind.Option)
             {
                 var name = token.Name;
+                if (name.Equals("config", global::System.StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!reader.TryReadValue(out var configOption))
+                        return global::RunesHela.RunesHelaErrors.MissingValue(commandPath, "config", json);
+                    continue;
+                }
                 if (name.Equals("help", global::System.StringComparison.OrdinalIgnoreCase)) continue;
                 if (name.Equals("json", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("plain", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("no-color", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("quiet", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("verbose", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("yes", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("no-input", global::System.StringComparison.OrdinalIgnoreCase)) continue;
                 if (name.Equals("format", global::System.StringComparison.OrdinalIgnoreCase))
@@ -243,7 +284,7 @@ internal static class __RunesHelaEntry
         return 0;
     }
 
-    private static ValueTask<int> RunNode2Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken)
+    private static ValueTask<int> RunNode2Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken, string? configPath)
     {
         if (global::RunesHela.RunesHelaOutputOptions.WantsHelp(args))
         {
@@ -251,12 +292,12 @@ internal static class __RunesHelaEntry
             return new ValueTask<int>(0);
         }
 
-        return InvokeNode2Async(args, json, services, cancellationToken);
+        return InvokeNode2Async(args, json, services, cancellationToken, configPath);
     }
 
-    private static ValueTask<int> InvokeNode2Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken)
+    private static ValueTask<int> InvokeNode2Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken, string? configPath)
     {
-        var bindResult = BindNode2(args, services, cancellationToken, json, out var command);
+        var bindResult = BindNode2(args, services, cancellationToken, json, configPath, out var command);
         if (bindResult != 0)
         {
             return new ValueTask<int>(bindResult);
@@ -265,7 +306,7 @@ internal static class __RunesHelaEntry
         return new ValueTask<int>(command.Run());
     }
 
-    private static int BindNode2(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, bool json, out global::Demo.RemoteCommand.ListCommand command)
+    private static int BindNode2(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, bool json, string? configPath, out global::Demo.RemoteCommand.ListCommand command)
     {
         command = null!;
         const string commandPath = "remote list";
@@ -276,6 +317,12 @@ internal static class __RunesHelaEntry
             if (token.Kind == global::RunesHela.Parsing.CommandLineTokenKind.Option)
             {
                 var name = token.Name;
+                if (name.Equals("config", global::System.StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!reader.TryReadValue(out var configOption))
+                        return global::RunesHela.RunesHelaErrors.MissingValue(commandPath, "config", json);
+                    continue;
+                }
                 if (name.Equals("help", global::System.StringComparison.OrdinalIgnoreCase)) continue;
                 if (name.Equals("json", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("plain", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("no-color", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("quiet", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("verbose", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("yes", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("no-input", global::System.StringComparison.OrdinalIgnoreCase)) continue;
                 if (name.Equals("format", global::System.StringComparison.OrdinalIgnoreCase))

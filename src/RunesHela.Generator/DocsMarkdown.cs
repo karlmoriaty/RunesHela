@@ -62,8 +62,8 @@ internal static class DocsMarkdown
 
         builder.AppendLine("### Options");
         builder.AppendLine();
-        builder.AppendLine("| Option | Type | Required | Default | Env | Description |");
-        builder.AppendLine("| --- | --- | --- | --- | --- | --- |");
+        builder.AppendLine("| Option | Type | Required | Default | Env | Config | Description |");
+        builder.AppendLine("| --- | --- | --- | --- | --- | --- | --- |");
 
         foreach (var option in node.Model.Options)
         {
@@ -82,11 +82,13 @@ internal static class DocsMarkdown
                 builder.Append('`').Append(option.IsSecret ? "***" : option.DefaultDisplay).Append('`');
             }
 
-            builder.Append(" | ");
-            builder.Append(option.EnvVar is null ? string.Empty : "`" + option.EnvVar + "`");
-            builder.Append(" | ").Append(Escape(option.Description)).AppendLine(" |");
+            builder.Append(" | `").Append(ConfigurationConventions.EnvVar(appName, node.Path, option)).Append("` | `")
+                .Append(ConfigurationConventions.ConfigKey(node.Path, option)).Append("` | ")
+                .Append(Escape(option.Description)).AppendLine(" |");
         }
 
+        builder.Append("| `--config <PATH>` | `string` | no | | `RHL_CONFIG` | | Read configuration from PATH. |");
+        builder.AppendLine();
         builder.AppendLine();
 
         if (node.Children.Count > 0)

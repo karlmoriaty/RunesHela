@@ -319,6 +319,14 @@ internal static class Diagnostics
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
+    public static readonly DiagnosticDescriptor InvalidConfigKey = new(
+        id: "RHL040",
+        title: "Invalid configuration key",
+        messageFormat: "Configuration key '{0}' is invalid; use dot-separated segments of letters, digits, '-' or '_'",
+        category: "RunesHela",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
     public static readonly DiagnosticDescriptor GeneratorError = new(
         id: "RHL999",
         title: "Generator error",
@@ -367,6 +375,7 @@ internal static class Diagnostics
         InvalidFilterType,
         FilterContract,
         FilterConstructor,
+        InvalidConfigKey,
         GeneratorError);
 
     private static readonly Dictionary<string, DiagnosticDescriptor> ById = CreateById();

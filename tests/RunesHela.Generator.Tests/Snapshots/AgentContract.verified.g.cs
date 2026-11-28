@@ -10,17 +10,18 @@ internal static class __RunesHelaEntry
 {
     private const string AppName = "TestAssembly";
 
-    private const string RootHelpText = "TestAssembly\n\nUsage: TestAssembly <command> [options]\n\nCommands:\n  purge  Purges a target.\n\nOptions:\n  -h, --help     Show help.\n      --version  Show version.\n\nExit codes:\n  0  Success\n  1  Failure\n  2  Usage error";
-    private const string RootHelpJson = "{\"schemaVersion\":\"1.0\",\"kind\":\"application\",\"name\":\"TestAssembly\",\"path\":\"\",\"description\":null,\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"},{\"name\":\"version\",\"short\":null,\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show version.\"}],\"commands\":[{\"name\":\"purge\",\"aliases\":[],\"description\":\"Purges a target.\",\"hidden\":false}],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"}]}";
-    private const string DescribeJson = "{\"schemaVersion\":\"1.0\",\"kind\":\"describe\",\"application\":\"TestAssembly\",\"commands\":[{\"name\":\"purge\",\"path\":\"purge\",\"description\":\"Purges a target.\",\"aliases\":[],\"hidden\":false,\"destructive\":true,\"arguments\":[{\"name\":\"TARGET\",\"position\":0,\"type\":\"string\",\"required\":false,\"params\":false,\"hasDefault\":true,\"default\":\"all\",\"description\":\"Target to purge.\"}],\"options\":[{\"name\":\"yes\",\"short\":\"y\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Confirm the destructive operation.\"},{\"name\":\"no-input\",\"short\":null,\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Disable interactive prompts.\"},{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"},{\"code\":3,\"description\":\"Configuration error\"},{\"code\":4,\"description\":\"Not found\"},{\"code\":5,\"description\":\"Permission denied\"},{\"code\":6,\"description\":\"Conflict\"},{\"code\":7,\"description\":\"Timeout\"},{\"code\":130,\"description\":\"Interrupted\"},{\"code\":141,\"description\":\"Broken pipe\"}],\"commands\":[]}]}";
-    private const string CompletionBash = "# bash completion for TestAssembly\n_RunesHela_TestAssembly()\n{\n    local cur=\"${COMP_WORDS[COMP_CWORD]}\"\n    local key=\"\"\n    if [ \"$COMP_CWORD\" -gt 1 ]; then\n        key=\"${COMP_WORDS[*]:1:$((COMP_CWORD-1))}\"\n    fi\n    local candidates=\"\"\n    case \"$key\" in\n        \"\") candidates=\"purge --help --version\" ;;\n        *) candidates=\"\" ;;\n    esac\n    COMPREPLY=( $(compgen -W \"$candidates\" -- \"$cur\") )\n}\ncomplete -F _RunesHela_TestAssembly TestAssembly\n";
-    private const string CompletionZsh = "#compdef TestAssembly\n_RunesHela_TestAssembly()\n{\n    local key=\"${(j: :)words[2,CURRENT-1]}\"\n    local -a candidates\n    case \"$key\" in\n        \"\") candidates=(purge --help --version) ;;\n        *) candidates=() ;;\n    esac\n    _describe 'values' candidates\n}\ncompdef _RunesHela_TestAssembly TestAssembly\n";
+    private const string RootHelpText = "TestAssembly\n\nUsage: TestAssembly <command> [options]\n\nCommands:\n  purge  Purges a target.\n\nOptions:\n      --config <PATH>  Read configuration from PATH.\n  -h, --help           Show help.\n      --version        Show version.\n\nExit codes:\n  0  Success\n  1  Failure\n  2  Usage error";
+    private const string RootHelpJson = "{\"schemaVersion\":\"1.0\",\"kind\":\"application\",\"name\":\"TestAssembly\",\"path\":\"\",\"description\":null,\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"config\",\"short\":null,\"aliases\":[],\"type\":\"string\",\"valueName\":\"PATH\",\"flag\":false,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":\"RHL_CONFIG\",\"secret\":false,\"hidden\":false,\"description\":\"Read configuration from PATH.\"},{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"},{\"name\":\"version\",\"short\":null,\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show version.\"}],\"commands\":[{\"name\":\"purge\",\"aliases\":[],\"description\":\"Purges a target.\",\"hidden\":false}],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"}]}";
+    private const string DescribeJson = "{\"schemaVersion\":\"1.0\",\"kind\":\"describe\",\"application\":\"TestAssembly\",\"commands\":[{\"name\":\"purge\",\"path\":\"purge\",\"description\":\"Purges a target.\",\"aliases\":[],\"hidden\":false,\"destructive\":true,\"arguments\":[{\"name\":\"TARGET\",\"position\":0,\"type\":\"string\",\"required\":false,\"params\":false,\"hasDefault\":true,\"default\":\"all\",\"description\":\"Target to purge.\"}],\"options\":[{\"name\":\"yes\",\"short\":\"y\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Confirm the destructive operation.\"},{\"name\":\"no-input\",\"short\":null,\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Disable interactive prompts.\"},{\"name\":\"config\",\"short\":null,\"aliases\":[],\"type\":\"string\",\"valueName\":\"PATH\",\"flag\":false,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":\"RHL_CONFIG\",\"secret\":false,\"hidden\":false,\"description\":\"Read configuration from PATH.\"},{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"},{\"code\":3,\"description\":\"Configuration error\"},{\"code\":4,\"description\":\"Not found\"},{\"code\":5,\"description\":\"Permission denied\"},{\"code\":6,\"description\":\"Conflict\"},{\"code\":7,\"description\":\"Timeout\"},{\"code\":130,\"description\":\"Interrupted\"},{\"code\":141,\"description\":\"Broken pipe\"}],\"commands\":[]}]}";
+    private const string CompletionBash = "# bash completion for TestAssembly\n_RunesHela_TestAssembly()\n{\n    local cur=\"${COMP_WORDS[COMP_CWORD]}\"\n    local key=\"\"\n    if [ \"$COMP_CWORD\" -gt 1 ]; then\n        key=\"${COMP_WORDS[*]:1:$((COMP_CWORD-1))}\"\n    fi\n    local candidates=\"\"\n    case \"$key\" in\n        \"\") candidates=\"purge --config --help --version\" ;;\n        *) candidates=\"\" ;;\n    esac\n    COMPREPLY=( $(compgen -W \"$candidates\" -- \"$cur\") )\n}\ncomplete -F _RunesHela_TestAssembly TestAssembly\n";
+    private const string CompletionZsh = "#compdef TestAssembly\n_RunesHela_TestAssembly()\n{\n    local key=\"${(j: :)words[2,CURRENT-1]}\"\n    local -a candidates\n    case \"$key\" in\n        \"\") candidates=(purge --config --help --version) ;;\n        *) candidates=() ;;\n    esac\n    _describe 'values' candidates\n}\ncompdef _RunesHela_TestAssembly TestAssembly\n";
     private const string CompletionFish = "# fish completion for TestAssembly\ncomplete -c TestAssembly -f\ncomplete -c TestAssembly -n '__fish_use_subcommand' -a 'purge' -d 'Purges a target.'\n";
-    private const string CompletionPowerShell = "# PowerShell completion for TestAssembly\nRegister-ArgumentCompleter -Native -CommandName 'TestAssembly' -ScriptBlock {\n    param($wordToComplete, $commandAst, $cursorPosition)\n    $words = $commandAst.CommandElements | ForEach-Object { $_.ToString() }\n    $key = ''\n    if ($words.Count -gt 2) {\n        $key = ($words[1..($words.Count - 2)] -join ' ')\n    }\n    $candidates = switch ($key) {\n        '' { @('purge', '--help', '--version') }\n        default { @() }\n    }\n    $candidates | Where-Object { $_ -like \"$wordToComplete*\" } | ForEach-Object {\n        [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)\n    }\n}\n";
-    private const string DocsMarkdown = "# TestAssembly\n\nGenerated by RunesHela. Do not edit by hand.\n\n## purge\n\nPurges a target.\n\n**Usage:** `TestAssembly purge [options]`\n\n### Arguments\n\n| Name | Type | Required | Default | Description |\n| --- | --- | --- | --- | --- |\n| `TARGET` | `string` | no | `all` | Target to purge. |\n\n### Options\n\n| Option | Type | Required | Default | Env | Description |\n| --- | --- | --- | --- | --- | --- |\n\n";
+    private const string CompletionPowerShell = "# PowerShell completion for TestAssembly\nRegister-ArgumentCompleter -Native -CommandName 'TestAssembly' -ScriptBlock {\n    param($wordToComplete, $commandAst, $cursorPosition)\n    $words = $commandAst.CommandElements | ForEach-Object { $_.ToString() }\n    $key = ''\n    if ($words.Count -gt 2) {\n        $key = ($words[1..($words.Count - 2)] -join ' ')\n    }\n    $candidates = switch ($key) {\n        '' { @('purge', '--config', '--help', '--version') }\n        default { @() }\n    }\n    $candidates | Where-Object { $_ -like \"$wordToComplete*\" } | ForEach-Object {\n        [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)\n    }\n}\n";
+    private const string DocsMarkdown = "# TestAssembly\n\nGenerated by RunesHela. Do not edit by hand.\n\n## purge\n\nPurges a target.\n\n**Usage:** `TestAssembly purge [options]`\n\n### Arguments\n\n| Name | Type | Required | Default | Description |\n| --- | --- | --- | --- | --- |\n| `TARGET` | `string` | no | `all` | Target to purge. |\n\n### Options\n\n| Option | Type | Required | Default | Env | Config | Description |\n| --- | --- | --- | --- | --- | --- | --- |\n| `--config <PATH>` | `string` | no | | `RHL_CONFIG` | | Read configuration from PATH. |\n\n";
     private const string ManRoff = ".TH \"TESTASSEMBLY\" \"1\" \"\" \"TestAssembly\" \"TestAssembly Manual\"\n.SH NAME\nTestAssembly \\- command-line application\n.SH SYNOPSIS\n.B TestAssembly\n[\\fIcommand\\fR] [\\fIoptions\\fR]\n.SH COMMANDS\n.TP\n.B purge\nPurges a target.\n.RS\n.SH ARGUMENTS\n.TP\n.B \\fITARGET\\fR\nTarget to purge.\n.RE\n";
-    private const string HelpText0 = "Usage: TestAssembly purge [<TARGET>] [options]\n\nPurges a target.\n\nArguments:\n  [<TARGET>]  Target to purge. [default: all]\n\nOptions:\n  -y, --yes       Confirm the destructive operation.\n      --no-input  Disable interactive prompts.\n  -h, --help      Show help.\n\nExit codes:\n  0  Success\n  1  Failure\n  2  Usage error";
-    private const string HelpJson0 = "{\"schemaVersion\":\"1.0\",\"kind\":\"command\",\"name\":\"purge\",\"path\":\"purge\",\"description\":\"Purges a target.\",\"aliases\":[],\"hidden\":false,\"destructive\":true,\"arguments\":[{\"name\":\"TARGET\",\"position\":0,\"type\":\"string\",\"required\":false,\"params\":false,\"hasDefault\":true,\"default\":\"all\",\"description\":\"Target to purge.\"}],\"options\":[{\"name\":\"yes\",\"short\":\"y\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Confirm the destructive operation.\"},{\"name\":\"no-input\",\"short\":null,\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Disable interactive prompts.\"},{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"commands\":[],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"}]}";
+    private const string ConfigSchema = "{\"schemaVersion\":\"1.0\",\"kind\":\"config\",\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"$id\":\"TestAssembly.config.schema.json\",\"title\":\"TestAssembly configuration\",\"type\":\"object\",\"additionalProperties\":true,\"properties\":{}}";
+    private const string HelpText0 = "Usage: TestAssembly purge [<TARGET>] [options]\n\nPurges a target.\n\nArguments:\n  [<TARGET>]  Target to purge. [default: all]\n\nOptions:\n  -y, --yes            Confirm the destructive operation.\n      --no-input       Disable interactive prompts.\n      --config <PATH>  Read configuration from PATH.\n  -h, --help           Show help.\n\nExit codes:\n  0  Success\n  1  Failure\n  2  Usage error";
+    private const string HelpJson0 = "{\"schemaVersion\":\"1.0\",\"kind\":\"command\",\"name\":\"purge\",\"path\":\"purge\",\"description\":\"Purges a target.\",\"aliases\":[],\"hidden\":false,\"destructive\":true,\"arguments\":[{\"name\":\"TARGET\",\"position\":0,\"type\":\"string\",\"required\":false,\"params\":false,\"hasDefault\":true,\"default\":\"all\",\"description\":\"Target to purge.\"}],\"options\":[{\"name\":\"yes\",\"short\":\"y\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Confirm the destructive operation.\"},{\"name\":\"no-input\",\"short\":null,\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Disable interactive prompts.\"},{\"name\":\"config\",\"short\":null,\"aliases\":[],\"type\":\"string\",\"valueName\":\"PATH\",\"flag\":false,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":\"RHL_CONFIG\",\"secret\":false,\"hidden\":false,\"description\":\"Read configuration from PATH.\"},{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"commands\":[],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"}]}";
 
     private static readonly string[] CommandCandidates =
     [
@@ -30,6 +31,7 @@ internal static class __RunesHelaEntry
     private static readonly string[] CompletionRoot =
     [
         "purge",
+        "--config",
         "--help",
         "--version",
     ];
@@ -39,6 +41,7 @@ internal static class __RunesHelaEntry
         "--yes",
         "-y",
         "--no-input",
+        "--config",
         "--help",
     ];
 
@@ -51,6 +54,7 @@ internal static class __RunesHelaEntry
     {
         var json = global::RunesHela.RunesHelaOutputOptions.WantsJson(args);
         var commandIndex = -1;
+        string? configPath = null;
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -86,6 +90,23 @@ internal static class __RunesHelaEntry
                 continue;
             }
 
+            if (arg == "--config")
+            {
+                if (i + 1 >= args.Length || args[i + 1].Length == 0)
+                    return new ValueTask<int>(global::RunesHela.RunesHelaErrors.MissingValue(string.Empty, "config", json));
+                configPath = args[i + 1];
+                i++;
+                continue;
+            }
+
+            if (arg.StartsWith("--config=", StringComparison.Ordinal))
+            {
+                if (arg.Length == 9)
+                    return new ValueTask<int>(global::RunesHela.RunesHelaErrors.MissingValue(string.Empty, "config", json));
+                configPath = arg.Substring(9);
+                continue;
+            }
+
             if (arg.Length > 2 && arg[0] == '-' && arg[1] == '-' && global::RunesHela.RunesHelaOutputOptions.IsGlobalFlag(arg.AsSpan(2))) continue;
             if (arg == "-y") continue;
 
@@ -97,6 +118,12 @@ internal static class __RunesHelaEntry
         {
             WriteRootHelp(json);
             return new ValueTask<int>(0);
+        }
+
+        if (configPath is null)
+        {
+            var environmentConfig = global::System.Environment.GetEnvironmentVariable("RHL_CONFIG");
+            if (!string.IsNullOrEmpty(environmentConfig)) configPath = environmentConfig;
         }
 
         var command = args[commandIndex];
@@ -124,6 +151,12 @@ internal static class __RunesHelaEntry
             return new ValueTask<int>(0);
         }
 
+        if (command == "schema")
+        {
+            global::RunesHela.RunesHelaConsole.Current.Out.WriteLine(ConfigSchema);
+            return new ValueTask<int>(0);
+        }
+
         if (command == "__complete")
         {
             return new ValueTask<int>(Complete(args.Slice(commandIndex + 1)));
@@ -132,13 +165,13 @@ internal static class __RunesHelaEntry
         switch (command)
         {
             case "purge":
-                return RunNode0Async(args.Slice(commandIndex + 1), json, services, cancellationToken);
+                return RunNode0Async(args.Slice(commandIndex + 1), json, services, cancellationToken, configPath);
             default:
                 return new ValueTask<int>(global::RunesHela.RunesHelaErrors.UnknownCommand(command, AppName, json, CommandCandidates));
         }
     }
 
-    private static ValueTask<int> RunNode0Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken)
+    private static ValueTask<int> RunNode0Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken, string? configPath)
     {
         if (global::RunesHela.RunesHelaOutputOptions.WantsHelp(args))
         {
@@ -146,12 +179,12 @@ internal static class __RunesHelaEntry
             return new ValueTask<int>(0);
         }
 
-        return InvokeNode0Async(args, json, services, cancellationToken);
+        return InvokeNode0Async(args, json, services, cancellationToken, configPath);
     }
 
-    private static ValueTask<int> InvokeNode0Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken)
+    private static ValueTask<int> InvokeNode0Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken, string? configPath)
     {
-        var bindResult = BindNode0(args, services, cancellationToken, json, out var command);
+        var bindResult = BindNode0(args, services, cancellationToken, json, configPath, out var command);
         if (bindResult != 0)
         {
             return new ValueTask<int>(bindResult);
@@ -174,7 +207,7 @@ internal static class __RunesHelaEntry
         return new ValueTask<int>(command.Run());
     }
 
-    private static int BindNode0(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, bool json, out global::Demo.PurgeCommand command)
+    private static int BindNode0(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, bool json, string? configPath, out global::Demo.PurgeCommand command)
     {
         command = null!;
         const string commandPath = "purge";
@@ -187,6 +220,12 @@ internal static class __RunesHelaEntry
             if (token.Kind == global::RunesHela.Parsing.CommandLineTokenKind.Option)
             {
                 var name = token.Name;
+                if (name.Equals("config", global::System.StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!reader.TryReadValue(out var configOption))
+                        return global::RunesHela.RunesHelaErrors.MissingValue(commandPath, "config", json);
+                    continue;
+                }
                 if (name.Equals("help", global::System.StringComparison.OrdinalIgnoreCase)) continue;
                 if (name.Equals("json", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("plain", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("no-color", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("quiet", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("verbose", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("yes", global::System.StringComparison.OrdinalIgnoreCase) || name.Equals("no-input", global::System.StringComparison.OrdinalIgnoreCase)) continue;
                 if (name.Equals("format", global::System.StringComparison.OrdinalIgnoreCase))

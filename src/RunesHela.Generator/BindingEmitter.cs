@@ -9,20 +9,34 @@ internal sealed class BindingEmitter
 {
     private readonly StringBuilder _builder;
     private readonly CommandNode _node;
+    private readonly string _appName;
+    private readonly string? _configFileName;
     private readonly int _nodeIndex;
     private readonly List<ParserMethod> _parsers = new List<ParserMethod>();
     private int _variableIndex;
 
-    private BindingEmitter(StringBuilder builder, CommandNode node, int nodeIndex)
+    private BindingEmitter(
+        StringBuilder builder,
+        CommandNode node,
+        string appName,
+        string? configFileName,
+        int nodeIndex)
     {
         _builder = builder;
         _node = node;
+        _appName = appName;
+        _configFileName = configFileName;
         _nodeIndex = nodeIndex;
     }
 
-    public static void Emit(StringBuilder builder, CommandNode node, int nodeIndex)
+    public static void Emit(
+        StringBuilder builder,
+        CommandNode node,
+        string appName,
+        string? configFileName,
+        int nodeIndex)
     {
-        new BindingEmitter(builder, node, nodeIndex).EmitNode();
+        new BindingEmitter(builder, node, appName, configFileName, nodeIndex).EmitNode();
     }
 
     private void EmitNode()
@@ -37,12 +51,12 @@ internal sealed class BindingEmitter
         if (model.IsStatic)
         {
             _builder.Append("    private static int BindNode").Append(_nodeIndex)
-                .AppendLine("(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, bool json)");
+                .AppendLine("(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, bool json, string? configPath)");
         }
         else
         {
             _builder.Append("    private static int BindNode").Append(_nodeIndex)
-                .Append("(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, bool json, out ")
+                .Append("(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, bool json, string? configPath, out ")
                 .Append(model.TypeFullName).AppendLine(" command)");
         }
 
@@ -55,6 +69,11 @@ internal sealed class BindingEmitter
 
         _builder.Append("        const string commandPath = ").Append(CodeLiteral.String(_node.Path)).AppendLine(";");
 
+        if (model.Options.Count > 0)
+        {
+            _builder.AppendLine("        var localConfigPath = configPath;");
+        }
+
         EmitLocalDeclarations(model);
 
         _builder.AppendLine("        var reader = new global::RunesHela.Parsing.CommandLineReader(args);");
@@ -64,6 +83,18 @@ internal sealed class BindingEmitter
         _builder.AppendLine("            if (token.Kind == global::RunesHela.Parsing.CommandLineTokenKind.Option)");
         _builder.AppendLine("            {");
         _builder.AppendLine("                var name = token.Name;");
+        _builder.AppendLine("                if (name.Equals(\"config\", global::System.StringComparison.OrdinalIgnoreCase))");
+        _builder.AppendLine("                {");
+        _builder.AppendLine("                    if (!reader.TryReadValue(out var configOption))");
+        _builder.AppendLine("                        return global::RunesHela.RunesHelaErrors.MissingValue(commandPath, \"config\", json);");
+
+        if (model.Options.Count > 0)
+        {
+            _builder.AppendLine("                    localConfigPath = global::RunesHela.Parsing.SpanText.ToString(configOption);");
+        }
+
+        _builder.AppendLine("                    continue;");
+        _builder.AppendLine("                }");
 
         if (model.Options.Count == 0)
         {
@@ -93,6 +124,7 @@ internal sealed class BindingEmitter
         _builder.AppendLine();
 
         EmitEnvironmentFallbacks(model);
+        EmitConfigFallbacks(model);
         EmitRequiredChecks(model);
         EmitValidations(model);
         EmitConstruction(model);
@@ -517,12 +549,7 @@ internal sealed class BindingEmitter
         for (var i = 0; i < model.Options.Count; i++)
         {
             var option = model.Options[i];
-
-            if (option.EnvVar is null)
-            {
-                continue;
-            }
-
+            var envName = ConfigurationConventions.EnvVar(_appName, _node.Path, option);
             var local = "o" + i;
             var setFlag = local + "Set";
             var condition = option.IsRepeatable ? local + " is null" : "!" + setFlag;
@@ -530,7 +557,7 @@ internal sealed class BindingEmitter
             _builder.Append("        if (").Append(condition).AppendLine(")");
             _builder.AppendLine("        {");
             _builder.Append("            var envValue = global::System.Environment.GetEnvironmentVariable(")
-                .Append(CodeLiteral.String(option.EnvVar)).AppendLine(");");
+                .Append(CodeLiteral.String(envName)).AppendLine(");");
             _builder.AppendLine("            if (envValue is not null)");
             _builder.AppendLine("            {");
 
@@ -546,8 +573,8 @@ internal sealed class BindingEmitter
                 if (elementType.Kind == TypeKind.String)
                 {
                     _builder.Append("                    (").Append(local)
-                        .Append(" ??= new global::System.Collections.Generic.List<")
-                        .Append(NonNullableDisplay(elementType)).AppendLine(">()).Add(part.ToString());");
+                        .Append(" ??= new global::System.Collections.Generic.List<string>()).Add(part.ToString());");
+                    _builder.AppendLine();
                 }
                 else
                 {
@@ -565,6 +592,15 @@ internal sealed class BindingEmitter
                 _builder.AppendLine("                    if (comma < 0) break;");
                 _builder.AppendLine("                    start = comma + 1;");
                 _builder.AppendLine("                }");
+            }
+            else if (option.IsFlag)
+            {
+                _builder.AppendLine("                if (!global::RunesHela.RunesHelaEnvironment.TryParseBoolean(envValue, out var parsed))");
+                _builder.Append("                    return global::RunesHela.RunesHelaErrors.InvalidValue(commandPath, ")
+                    .Append(CodeLiteral.String(option.LongName))
+                    .Append(", envValue, \"true or false\", json);");
+                _builder.AppendLine();
+                _builder.Append("                ").Append(local).AppendLine(" = parsed;");
             }
             else if (option.Type.Kind == TypeKind.String)
             {
@@ -592,6 +628,140 @@ internal sealed class BindingEmitter
         }
     }
 
+    private void EmitConfigFallbacks(CommandModel model)
+    {
+        if (model.Options.Count == 0)
+        {
+            return;
+        }
+
+        _builder.AppendLine("        var config = global::RunesHela.RunesHelaConfiguration.Load(localConfigPath, AppName, json, "
+            + (_configFileName is null ? "null" : CodeLiteral.String(_configFileName))
+            + ", commandPath);");
+        _builder.AppendLine("        if (config.ExitCode != 0)");
+        _builder.AppendLine("        {");
+        _builder.AppendLine("            return config.ExitCode;");
+        _builder.AppendLine("        }");
+        _builder.AppendLine();
+
+        for (var i = 0; i < model.Options.Count; i++)
+        {
+            var option = model.Options[i];
+            var key = ConfigurationConventions.ConfigKey(_node.Path, option);
+            var local = "o" + i;
+            var setFlag = local + "Set";
+            var condition = option.IsRepeatable ? local + " is null" : "!" + setFlag;
+
+            _builder.Append("        if (").Append(condition).AppendLine(")");
+            _builder.AppendLine("        {");
+
+            if (!option.IsRepeatable)
+            {
+                _builder.Append("            if (config.TryGetValue(").Append(CodeLiteral.String(key))
+                    .Append(", out var configValue").Append(i).AppendLine("))");
+                _builder.AppendLine("            {");
+
+                if (option.Type.Kind == TypeKind.String)
+                {
+                    _builder.Append("                ").Append(local).Append(" = configValue").Append(i).AppendLine(";");
+                }
+                else
+                {
+                    var parser = EnsureParser(option.Type);
+                    _builder.Append("                if (!").Append(parser).Append("(configValue").Append(i)
+                        .Append(", out var configParsed").Append(i).AppendLine("))");
+                    _builder.AppendLine("                {");
+                    _builder.Append("                    return global::RunesHela.RunesHelaErrors.ConfigInvalidValue(config.Path ?? \"configuration\", ")
+                        .Append(CodeLiteral.String(key)).Append(", ")
+                        .Append(CodeLiteral.String(ExpectedValue(option.Type))).AppendLine(", json, commandPath);");
+                    _builder.AppendLine("                }");
+                    _builder.Append("                ").Append(local).Append(" = configParsed").Append(i).AppendLine(";");
+                }
+
+                _builder.Append("                ").Append(setFlag).AppendLine(" = true;");
+                _builder.AppendLine("            }");
+                _builder.AppendLine("        }");
+                _builder.AppendLine();
+                continue;
+            }
+
+            _builder.Append("            if (config.TryGetValues(").Append(CodeLiteral.String(key))
+                .Append(", out var configItems").Append(i).AppendLine("))");
+            _builder.AppendLine("            {");
+
+            var elementType = option.Type.ElementType!;
+            _builder.Append("                var configList").Append(i)
+                .Append(" = new global::System.Collections.Generic.List<")
+                .Append(NonNullableDisplay(elementType)).AppendLine(">();");
+            _builder.Append("                for (var configIndex").Append(i).Append(" = 0; configIndex").Append(i)
+                .Append(" < configItems").Append(i).AppendLine(".Length; configIndex" + i + "++)");
+            _builder.AppendLine("                {");
+
+            if (elementType.Kind == TypeKind.String)
+            {
+                _builder.Append("                    configList").Append(i).Append(".Add(configItems").Append(i)
+                    .AppendLine("[configIndex" + i + "]);");
+            }
+            else
+            {
+                var parser = EnsureParser(elementType);
+                _builder.Append("                    if (!").Append(parser).Append("(configItems").Append(i)
+                    .Append("[configIndex").Append(i).Append("], out var configItem").Append(i).AppendLine("))");
+                _builder.AppendLine("                    {");
+                _builder.Append("                        return global::RunesHela.RunesHelaErrors.ConfigInvalidValue(config.Path ?? \"configuration\", ")
+                    .Append(CodeLiteral.String(key)).Append(", ")
+                    .Append(CodeLiteral.String(ExpectedValue(elementType))).AppendLine(", json, commandPath);");
+                _builder.AppendLine("                    }");
+                _builder.Append("                    configList").Append(i).Append(".Add(configItem").Append(i).AppendLine(");");
+            }
+
+            _builder.AppendLine("                }");
+            _builder.Append("                ").Append(local).Append(" = configList").Append(i).AppendLine(";");
+            _builder.AppendLine("            }");
+            _builder.Append("            else if (config.TryGetValue(").Append(CodeLiteral.String(key))
+                .Append(", out var configValue").Append(i).AppendLine("))");
+            _builder.AppendLine("            {");
+
+            if (elementType.Kind == TypeKind.String)
+            {
+                _builder.Append("                ").Append(local)
+                    .Append(" = new global::System.Collections.Generic.List<string>(configValue")
+                    .Append(i).AppendLine(".Split(','));");
+            }
+            else
+            {
+                var parser = EnsureParser(elementType);
+                _builder.Append("                ").Append(local)
+                    .Append(" = new global::System.Collections.Generic.List<")
+                    .Append(NonNullableDisplay(elementType)).AppendLine(">();");
+                _builder.AppendLine("                var configStart" + i + " = 0;");
+                _builder.AppendLine("                while (true)");
+                _builder.AppendLine("                {");
+                _builder.Append("                    var configComma").Append(i).Append(" = configValue").Append(i)
+                    .AppendLine(".IndexOf(',', configStart" + i + ");");
+                _builder.Append("                    var configPart").Append(i).Append(" = configComma").Append(i)
+                    .Append(" < 0 ? configValue").Append(i).Append(".AsSpan(configStart" + i + ") : configValue")
+                    .Append(i).Append(".AsSpan(configStart").Append(i).Append(", configComma").Append(i)
+                    .Append(" - configStart").Append(i).AppendLine(");");
+                _builder.Append("                    if (!").Append(parser).Append("(configPart").Append(i)
+                    .Append(", out var configParsed").Append(i).AppendLine("))");
+                _builder.AppendLine("                    {");
+                _builder.Append("                        return global::RunesHela.RunesHelaErrors.ConfigInvalidValue(config.Path ?? \"configuration\", ")
+                    .Append(CodeLiteral.String(key)).Append(", ")
+                    .Append(CodeLiteral.String(ExpectedValue(elementType))).AppendLine(", json, commandPath);");
+                _builder.AppendLine("                    }");
+                _builder.Append("                    ").Append(local).Append(".Add(configParsed").Append(i).AppendLine(");");
+                _builder.Append("                    if (configComma").Append(i).AppendLine(" < 0) break;");
+                _builder.Append("                    configStart").Append(i).Append(" = configComma").Append(i).AppendLine(" + 1;");
+                _builder.AppendLine("                }");
+            }
+
+            _builder.AppendLine("            }");
+            _builder.AppendLine("        }");
+            _builder.AppendLine();
+        }
+    }
+
     private void EmitRequiredChecks(CommandModel model)
     {
         for (var i = 0; i < model.Options.Count; i++)
@@ -605,11 +775,12 @@ internal sealed class BindingEmitter
 
             var local = "o" + i;
             var condition = option.IsRepeatable ? local + " is null" : "!" + local + "Set";
+            var envName = ConfigurationConventions.EnvVar(_appName, _node.Path, option);
 
             _builder.Append("        if (").Append(condition).AppendLine(")");
             _builder.Append("            return global::RunesHela.RunesHelaErrors.MissingRequiredOption(commandPath, ")
                 .Append(CodeLiteral.String(option.LongName)).Append(", ")
-                .Append(option.EnvVar is null ? "null" : CodeLiteral.String(option.EnvVar))
+                .Append(CodeLiteral.String(envName))
                 .AppendLine(", json);");
             _builder.AppendLine();
         }
@@ -951,7 +1122,7 @@ internal sealed class BindingEmitter
 
     private static bool NeedsSetFlag(OptionModel option)
     {
-        return !option.IsRepeatable && (option.IsRequired || option.EnvVar is not null);
+        return !option.IsRepeatable;
     }
 
     private static string MatchExpression(string nameExpression, string longName, EquatableArray<string> aliases)

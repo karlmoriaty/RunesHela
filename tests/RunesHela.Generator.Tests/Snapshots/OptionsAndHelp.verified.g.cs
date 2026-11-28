@@ -10,17 +10,18 @@ internal static class __RunesHelaEntry
 {
     private const string AppName = "TestAssembly";
 
-    private const string RootHelpText = "TestAssembly\n\nUsage: TestAssembly <command> [options]\n\nCommands:\n  deploy  部署到指定环境。\n\nOptions:\n  -h, --help     Show help.\n      --version  Show version.\n\nExit codes:\n  0  Success\n  1  Failure\n  2  Usage error";
-    private const string RootHelpJson = "{\"schemaVersion\":\"1.0\",\"kind\":\"application\",\"name\":\"TestAssembly\",\"path\":\"\",\"description\":null,\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"},{\"name\":\"version\",\"short\":null,\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show version.\"}],\"commands\":[{\"name\":\"deploy\",\"aliases\":[],\"description\":\"部署到指定环境。\",\"hidden\":false}],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"}]}";
-    private const string DescribeJson = "{\"schemaVersion\":\"1.0\",\"kind\":\"describe\",\"application\":\"TestAssembly\",\"commands\":[{\"name\":\"deploy\",\"path\":\"deploy\",\"description\":\"部署到指定环境。\",\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[{\"name\":\"TARGET\",\"position\":0,\"type\":\"string\",\"required\":false,\"params\":false,\"hasDefault\":true,\"default\":\"all\",\"description\":\"部署目标。\"}],\"options\":[{\"name\":\"environment\",\"short\":\"e\",\"aliases\":[],\"type\":\"string\",\"valueName\":\"VALUE\",\"flag\":false,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":true,\"default\":\"dev\",\"env\":\"APP_ENV\",\"secret\":false,\"hidden\":false,\"description\":\"目标环境。\"},{\"name\":\"count\",\"short\":\"c\",\"aliases\":[],\"type\":\"int\",\"valueName\":\"NUMBER\",\"flag\":false,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":true,\"default\":1,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"重复次数。\"},{\"name\":\"dry-run\",\"short\":null,\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":true,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"是否演练。\"},{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"examples\":[\"deploy prod --environment live --count 3\"],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"},{\"code\":3,\"description\":\"Configuration error\"},{\"code\":4,\"description\":\"Not found\"},{\"code\":5,\"description\":\"Permission denied\"},{\"code\":6,\"description\":\"Conflict\"},{\"code\":7,\"description\":\"Timeout\"},{\"code\":130,\"description\":\"Interrupted\"},{\"code\":141,\"description\":\"Broken pipe\"}],\"commands\":[]}]}";
-    private const string CompletionBash = "# bash completion for TestAssembly\n_RunesHela_TestAssembly()\n{\n    local cur=\"${COMP_WORDS[COMP_CWORD]}\"\n    local key=\"\"\n    if [ \"$COMP_CWORD\" -gt 1 ]; then\n        key=\"${COMP_WORDS[*]:1:$((COMP_CWORD-1))}\"\n    fi\n    local candidates=\"\"\n    case \"$key\" in\n        \"\") candidates=\"deploy --help --version\" ;;\n        \"deploy\") candidates=\"--environment -e --count -c --dry-run --help\" ;;\n        *) candidates=\"\" ;;\n    esac\n    COMPREPLY=( $(compgen -W \"$candidates\" -- \"$cur\") )\n}\ncomplete -F _RunesHela_TestAssembly TestAssembly\n";
-    private const string CompletionZsh = "#compdef TestAssembly\n_RunesHela_TestAssembly()\n{\n    local key=\"${(j: :)words[2,CURRENT-1]}\"\n    local -a candidates\n    case \"$key\" in\n        \"\") candidates=(deploy --help --version) ;;\n        \"deploy\") candidates=(--environment -e --count -c --dry-run --help) ;;\n        *) candidates=() ;;\n    esac\n    _describe 'values' candidates\n}\ncompdef _RunesHela_TestAssembly TestAssembly\n";
+    private const string RootHelpText = "TestAssembly\n\nUsage: TestAssembly <command> [options]\n\nCommands:\n  deploy  部署到指定环境。\n\nOptions:\n      --config <PATH>  Read configuration from PATH.\n  -h, --help           Show help.\n      --version        Show version.\n\nExit codes:\n  0  Success\n  1  Failure\n  2  Usage error";
+    private const string RootHelpJson = "{\"schemaVersion\":\"1.0\",\"kind\":\"application\",\"name\":\"TestAssembly\",\"path\":\"\",\"description\":null,\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[],\"options\":[{\"name\":\"config\",\"short\":null,\"aliases\":[],\"type\":\"string\",\"valueName\":\"PATH\",\"flag\":false,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":\"RHL_CONFIG\",\"secret\":false,\"hidden\":false,\"description\":\"Read configuration from PATH.\"},{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"},{\"name\":\"version\",\"short\":null,\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show version.\"}],\"commands\":[{\"name\":\"deploy\",\"aliases\":[],\"description\":\"部署到指定环境。\",\"hidden\":false}],\"examples\":[],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"}]}";
+    private const string DescribeJson = "{\"schemaVersion\":\"1.0\",\"kind\":\"describe\",\"application\":\"TestAssembly\",\"commands\":[{\"name\":\"deploy\",\"path\":\"deploy\",\"description\":\"部署到指定环境。\",\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[{\"name\":\"TARGET\",\"position\":0,\"type\":\"string\",\"required\":false,\"params\":false,\"hasDefault\":true,\"default\":\"all\",\"description\":\"部署目标。\"}],\"options\":[{\"name\":\"environment\",\"short\":\"e\",\"aliases\":[],\"type\":\"string\",\"valueName\":\"VALUE\",\"flag\":false,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":true,\"default\":\"dev\",\"configKey\":\"deploy.environment\",\"env\":\"APP_ENV\",\"secret\":false,\"hidden\":false,\"description\":\"目标环境。\"},{\"name\":\"count\",\"short\":\"c\",\"aliases\":[],\"type\":\"int\",\"valueName\":\"NUMBER\",\"flag\":false,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":true,\"default\":1,\"configKey\":\"deploy.count\",\"env\":\"TESTASSEMBLY_DEPLOY_COUNT\",\"secret\":false,\"hidden\":false,\"description\":\"重复次数。\"},{\"name\":\"dry-run\",\"short\":null,\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":true,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":\"deploy.dry-run\",\"env\":\"TESTASSEMBLY_DEPLOY_DRY_RUN\",\"secret\":false,\"hidden\":false,\"description\":\"是否演练。\"},{\"name\":\"config\",\"short\":null,\"aliases\":[],\"type\":\"string\",\"valueName\":\"PATH\",\"flag\":false,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":\"RHL_CONFIG\",\"secret\":false,\"hidden\":false,\"description\":\"Read configuration from PATH.\"},{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"examples\":[\"deploy prod --environment live --count 3\"],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"},{\"code\":3,\"description\":\"Configuration error\"},{\"code\":4,\"description\":\"Not found\"},{\"code\":5,\"description\":\"Permission denied\"},{\"code\":6,\"description\":\"Conflict\"},{\"code\":7,\"description\":\"Timeout\"},{\"code\":130,\"description\":\"Interrupted\"},{\"code\":141,\"description\":\"Broken pipe\"}],\"commands\":[]}]}";
+    private const string CompletionBash = "# bash completion for TestAssembly\n_RunesHela_TestAssembly()\n{\n    local cur=\"${COMP_WORDS[COMP_CWORD]}\"\n    local key=\"\"\n    if [ \"$COMP_CWORD\" -gt 1 ]; then\n        key=\"${COMP_WORDS[*]:1:$((COMP_CWORD-1))}\"\n    fi\n    local candidates=\"\"\n    case \"$key\" in\n        \"\") candidates=\"deploy --config --help --version\" ;;\n        \"deploy\") candidates=\"--environment -e --count -c --dry-run --config --help\" ;;\n        *) candidates=\"\" ;;\n    esac\n    COMPREPLY=( $(compgen -W \"$candidates\" -- \"$cur\") )\n}\ncomplete -F _RunesHela_TestAssembly TestAssembly\n";
+    private const string CompletionZsh = "#compdef TestAssembly\n_RunesHela_TestAssembly()\n{\n    local key=\"${(j: :)words[2,CURRENT-1]}\"\n    local -a candidates\n    case \"$key\" in\n        \"\") candidates=(deploy --config --help --version) ;;\n        \"deploy\") candidates=(--environment -e --count -c --dry-run --config --help) ;;\n        *) candidates=() ;;\n    esac\n    _describe 'values' candidates\n}\ncompdef _RunesHela_TestAssembly TestAssembly\n";
     private const string CompletionFish = "# fish completion for TestAssembly\ncomplete -c TestAssembly -f\ncomplete -c TestAssembly -n '__fish_use_subcommand' -a 'deploy' -d '部署到指定环境。'\ncomplete -c TestAssembly -n '__fish_seen_subcommand_from deploy' -l environment -s e -d '目标环境。'\ncomplete -c TestAssembly -n '__fish_seen_subcommand_from deploy' -l count -s c -d '重复次数。'\ncomplete -c TestAssembly -n '__fish_seen_subcommand_from deploy' -l dry-run -d '是否演练。'\n";
-    private const string CompletionPowerShell = "# PowerShell completion for TestAssembly\nRegister-ArgumentCompleter -Native -CommandName 'TestAssembly' -ScriptBlock {\n    param($wordToComplete, $commandAst, $cursorPosition)\n    $words = $commandAst.CommandElements | ForEach-Object { $_.ToString() }\n    $key = ''\n    if ($words.Count -gt 2) {\n        $key = ($words[1..($words.Count - 2)] -join ' ')\n    }\n    $candidates = switch ($key) {\n        '' { @('deploy', '--help', '--version') }\n        'deploy' { @('--environment', '-e', '--count', '-c', '--dry-run', '--help') }\n        default { @() }\n    }\n    $candidates | Where-Object { $_ -like \"$wordToComplete*\" } | ForEach-Object {\n        [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)\n    }\n}\n";
-    private const string DocsMarkdown = "# TestAssembly\n\nGenerated by RunesHela. Do not edit by hand.\n\n## deploy\n\n部署到指定环境。\n\n**Usage:** `TestAssembly deploy [options]`\n\n### Arguments\n\n| Name | Type | Required | Default | Description |\n| --- | --- | --- | --- | --- |\n| `TARGET` | `string` | no | `all` | 部署目标。 |\n\n### Options\n\n| Option | Type | Required | Default | Env | Description |\n| --- | --- | --- | --- | --- | --- |\n| `-e, --environment` | `string` | no | `dev` | `APP_ENV` | 目标环境。 |\n| `-c, --count` | `int` | no | `1` |  | 重复次数。 |\n| `--dry-run` | `bool` | no |  |  | 是否演练。 |\n\n";
+    private const string CompletionPowerShell = "# PowerShell completion for TestAssembly\nRegister-ArgumentCompleter -Native -CommandName 'TestAssembly' -ScriptBlock {\n    param($wordToComplete, $commandAst, $cursorPosition)\n    $words = $commandAst.CommandElements | ForEach-Object { $_.ToString() }\n    $key = ''\n    if ($words.Count -gt 2) {\n        $key = ($words[1..($words.Count - 2)] -join ' ')\n    }\n    $candidates = switch ($key) {\n        '' { @('deploy', '--config', '--help', '--version') }\n        'deploy' { @('--environment', '-e', '--count', '-c', '--dry-run', '--config', '--help') }\n        default { @() }\n    }\n    $candidates | Where-Object { $_ -like \"$wordToComplete*\" } | ForEach-Object {\n        [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)\n    }\n}\n";
+    private const string DocsMarkdown = "# TestAssembly\n\nGenerated by RunesHela. Do not edit by hand.\n\n## deploy\n\n部署到指定环境。\n\n**Usage:** `TestAssembly deploy [options]`\n\n### Arguments\n\n| Name | Type | Required | Default | Description |\n| --- | --- | --- | --- | --- |\n| `TARGET` | `string` | no | `all` | 部署目标。 |\n\n### Options\n\n| Option | Type | Required | Default | Env | Config | Description |\n| --- | --- | --- | --- | --- | --- | --- |\n| `-e, --environment` | `string` | no | `dev` | `APP_ENV` | `deploy.environment` | 目标环境。 |\n| `-c, --count` | `int` | no | `1` | `TESTASSEMBLY_DEPLOY_COUNT` | `deploy.count` | 重复次数。 |\n| `--dry-run` | `bool` | no |  | `TESTASSEMBLY_DEPLOY_DRY_RUN` | `deploy.dry-run` | 是否演练。 |\n| `--config <PATH>` | `string` | no | | `RHL_CONFIG` | | Read configuration from PATH. |\n\n";
     private const string ManRoff = ".TH \"TESTASSEMBLY\" \"1\" \"\" \"TestAssembly\" \"TestAssembly Manual\"\n.SH NAME\nTestAssembly \\- command-line application\n.SH SYNOPSIS\n.B TestAssembly\n[\\fIcommand\\fR] [\\fIoptions\\fR]\n.SH COMMANDS\n.TP\n.B deploy\n部署到指定环境。\n.RS\n.SH ARGUMENTS\n.TP\n.B \\fITARGET\\fR\n部署目标。\n.RE\n.RS\n.TP\n.B \\\\-e, \\\\-\\\\-environment\n目标环境。\n.TP\n.B \\\\-c, \\\\-\\\\-count\n重复次数。\n.TP\n.B \\\\-\\\\-dry-run\n是否演练。\n.RE\n";
-    private const string HelpText0 = "Usage: TestAssembly deploy [<TARGET>] [options]\n\n部署到指定环境。\n\nArguments:\n  [<TARGET>]  部署目标。 [default: all]\n\nOptions:\n  -e, --environment <VALUE>  目标环境。 [default: dev] [env: APP_ENV]\n  -c, --count <NUMBER>       重复次数。 [default: 1]\n      --dry-run              是否演练。\n  -h, --help                 Show help.\n\nExamples:\n  deploy prod --environment live --count 3\n\nExit codes:\n  0  Success\n  1  Failure\n  2  Usage error";
-    private const string HelpJson0 = "{\"schemaVersion\":\"1.0\",\"kind\":\"command\",\"name\":\"deploy\",\"path\":\"deploy\",\"description\":\"部署到指定环境。\",\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[{\"name\":\"TARGET\",\"position\":0,\"type\":\"string\",\"required\":false,\"params\":false,\"hasDefault\":true,\"default\":\"all\",\"description\":\"部署目标。\"}],\"options\":[{\"name\":\"environment\",\"short\":\"e\",\"aliases\":[],\"type\":\"string\",\"valueName\":\"VALUE\",\"flag\":false,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":true,\"default\":\"dev\",\"env\":\"APP_ENV\",\"secret\":false,\"hidden\":false,\"description\":\"目标环境。\"},{\"name\":\"count\",\"short\":\"c\",\"aliases\":[],\"type\":\"int\",\"valueName\":\"NUMBER\",\"flag\":false,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":true,\"default\":1,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"重复次数。\"},{\"name\":\"dry-run\",\"short\":null,\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":true,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"是否演练。\"},{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"commands\":[],\"examples\":[\"deploy prod --environment live --count 3\"],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"}]}";
+    private const string ConfigSchema = "{\"schemaVersion\":\"1.0\",\"kind\":\"config\",\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"$id\":\"TestAssembly.config.schema.json\",\"title\":\"TestAssembly configuration\",\"type\":\"object\",\"additionalProperties\":true,\"properties\":{\"deploy\":{\"type\":\"object\",\"additionalProperties\":true,\"properties\":{\"count\":{\"type\":\"integer\",\"description\":\"重复次数。\",\"default\":1},\"dry-run\":{\"type\":\"boolean\",\"description\":\"是否演练。\"},\"environment\":{\"type\":\"string\",\"description\":\"目标环境。\",\"default\":\"dev\"}}}}}";
+    private const string HelpText0 = "Usage: TestAssembly deploy [<TARGET>] [options]\n\n部署到指定环境。\n\nArguments:\n  [<TARGET>]  部署目标。 [default: all]\n\nOptions:\n  -e, --environment <VALUE>  目标环境。 [default: dev] [env: APP_ENV]\n  -c, --count <NUMBER>       重复次数。 [default: 1] [env: TESTASSEMBLY_DEPLOY_COUNT]\n      --dry-run              是否演练。 [env: TESTASSEMBLY_DEPLOY_DRY_RUN]\n      --config <PATH>        Read configuration from PATH.\n  -h, --help                 Show help.\n\nExamples:\n  deploy prod --environment live --count 3\n\nExit codes:\n  0  Success\n  1  Failure\n  2  Usage error";
+    private const string HelpJson0 = "{\"schemaVersion\":\"1.0\",\"kind\":\"command\",\"name\":\"deploy\",\"path\":\"deploy\",\"description\":\"部署到指定环境。\",\"aliases\":[],\"hidden\":false,\"destructive\":false,\"arguments\":[{\"name\":\"TARGET\",\"position\":0,\"type\":\"string\",\"required\":false,\"params\":false,\"hasDefault\":true,\"default\":\"all\",\"description\":\"部署目标。\"}],\"options\":[{\"name\":\"environment\",\"short\":\"e\",\"aliases\":[],\"type\":\"string\",\"valueName\":\"VALUE\",\"flag\":false,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":true,\"default\":\"dev\",\"configKey\":\"deploy.environment\",\"env\":\"APP_ENV\",\"secret\":false,\"hidden\":false,\"description\":\"目标环境。\"},{\"name\":\"count\",\"short\":\"c\",\"aliases\":[],\"type\":\"int\",\"valueName\":\"NUMBER\",\"flag\":false,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":true,\"default\":1,\"configKey\":\"deploy.count\",\"env\":\"TESTASSEMBLY_DEPLOY_COUNT\",\"secret\":false,\"hidden\":false,\"description\":\"重复次数。\"},{\"name\":\"dry-run\",\"short\":null,\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":true,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":\"deploy.dry-run\",\"env\":\"TESTASSEMBLY_DEPLOY_DRY_RUN\",\"secret\":false,\"hidden\":false,\"description\":\"是否演练。\"},{\"name\":\"config\",\"short\":null,\"aliases\":[],\"type\":\"string\",\"valueName\":\"PATH\",\"flag\":false,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":\"RHL_CONFIG\",\"secret\":false,\"hidden\":false,\"description\":\"Read configuration from PATH.\"},{\"name\":\"help\",\"short\":\"h\",\"aliases\":[],\"type\":\"bool\",\"valueName\":null,\"flag\":true,\"negatable\":false,\"repeatable\":false,\"required\":false,\"hasDefault\":false,\"default\":null,\"configKey\":null,\"env\":null,\"secret\":false,\"hidden\":false,\"description\":\"Show help.\"}],\"commands\":[],\"examples\":[\"deploy prod --environment live --count 3\"],\"exitCodes\":[{\"code\":0,\"description\":\"Success\"},{\"code\":1,\"description\":\"Failure\"},{\"code\":2,\"description\":\"Usage error\"}]}";
 
     private static readonly string[] CommandCandidates =
     [
@@ -30,6 +31,7 @@ internal static class __RunesHelaEntry
     private static readonly string[] CompletionRoot =
     [
         "deploy",
+        "--config",
         "--help",
         "--version",
     ];
@@ -41,6 +43,7 @@ internal static class __RunesHelaEntry
         "--count",
         "-c",
         "--dry-run",
+        "--config",
         "--help",
     ];
 
@@ -60,6 +63,7 @@ internal static class __RunesHelaEntry
     {
         var json = global::RunesHela.RunesHelaOutputOptions.WantsJson(args);
         var commandIndex = -1;
+        string? configPath = null;
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -95,6 +99,23 @@ internal static class __RunesHelaEntry
                 continue;
             }
 
+            if (arg == "--config")
+            {
+                if (i + 1 >= args.Length || args[i + 1].Length == 0)
+                    return new ValueTask<int>(global::RunesHela.RunesHelaErrors.MissingValue(string.Empty, "config", json));
+                configPath = args[i + 1];
+                i++;
+                continue;
+            }
+
+            if (arg.StartsWith("--config=", StringComparison.Ordinal))
+            {
+                if (arg.Length == 9)
+                    return new ValueTask<int>(global::RunesHela.RunesHelaErrors.MissingValue(string.Empty, "config", json));
+                configPath = arg.Substring(9);
+                continue;
+            }
+
             if (arg.Length > 2 && arg[0] == '-' && arg[1] == '-' && global::RunesHela.RunesHelaOutputOptions.IsGlobalFlag(arg.AsSpan(2))) continue;
             if (arg == "-y") continue;
 
@@ -106,6 +127,12 @@ internal static class __RunesHelaEntry
         {
             WriteRootHelp(json);
             return new ValueTask<int>(0);
+        }
+
+        if (configPath is null)
+        {
+            var environmentConfig = global::System.Environment.GetEnvironmentVariable("RHL_CONFIG");
+            if (!string.IsNullOrEmpty(environmentConfig)) configPath = environmentConfig;
         }
 
         var command = args[commandIndex];
@@ -133,6 +160,12 @@ internal static class __RunesHelaEntry
             return new ValueTask<int>(0);
         }
 
+        if (command == "schema")
+        {
+            global::RunesHela.RunesHelaConsole.Current.Out.WriteLine(ConfigSchema);
+            return new ValueTask<int>(0);
+        }
+
         if (command == "__complete")
         {
             return new ValueTask<int>(Complete(args.Slice(commandIndex + 1)));
@@ -141,13 +174,13 @@ internal static class __RunesHelaEntry
         switch (command)
         {
             case "deploy":
-                return RunNode0Async(args.Slice(commandIndex + 1), json, services, cancellationToken);
+                return RunNode0Async(args.Slice(commandIndex + 1), json, services, cancellationToken, configPath);
             default:
                 return new ValueTask<int>(global::RunesHela.RunesHelaErrors.UnknownCommand(command, AppName, json, CommandCandidates));
         }
     }
 
-    private static ValueTask<int> RunNode0Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken)
+    private static ValueTask<int> RunNode0Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken, string? configPath)
     {
         if (global::RunesHela.RunesHelaOutputOptions.WantsHelp(args))
         {
@@ -155,12 +188,12 @@ internal static class __RunesHelaEntry
             return new ValueTask<int>(0);
         }
 
-        return InvokeNode0Async(args, json, services, cancellationToken);
+        return InvokeNode0Async(args, json, services, cancellationToken, configPath);
     }
 
-    private static ValueTask<int> InvokeNode0Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken)
+    private static ValueTask<int> InvokeNode0Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken, string? configPath)
     {
-        var bindResult = BindNode0(args, services, cancellationToken, json, out var command);
+        var bindResult = BindNode0(args, services, cancellationToken, json, configPath, out var command);
         if (bindResult != 0)
         {
             return new ValueTask<int>(bindResult);
@@ -169,14 +202,17 @@ internal static class __RunesHelaEntry
         return new ValueTask<int>(command.Run());
     }
 
-    private static int BindNode0(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, bool json, out global::Demo.DeployCommand command)
+    private static int BindNode0(ReadOnlySpan<string> args, global::System.IServiceProvider? services, global::System.Threading.CancellationToken cancellationToken, bool json, string? configPath, out global::Demo.DeployCommand command)
     {
         command = null!;
         const string commandPath = "deploy";
+        var localConfigPath = configPath;
         string o0 = "dev";
         var o0Set = false;
         int o1 = 1;
+        var o1Set = false;
         bool o2 = default;
+        var o2Set = false;
         string a0 = "all";
         var positional = 0;
         var reader = new global::RunesHela.Parsing.CommandLineReader(args);
@@ -186,6 +222,13 @@ internal static class __RunesHelaEntry
             if (token.Kind == global::RunesHela.Parsing.CommandLineTokenKind.Option)
             {
                 var name = token.Name;
+                if (name.Equals("config", global::System.StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!reader.TryReadValue(out var configOption))
+                        return global::RunesHela.RunesHelaErrors.MissingValue(commandPath, "config", json);
+                    localConfigPath = global::RunesHela.Parsing.SpanText.ToString(configOption);
+                    continue;
+                }
                 var optionIndex = -1;
                 var negated = false;
                 if (token.PrefixLength == 2)
@@ -224,12 +267,13 @@ internal static class __RunesHelaEntry
                         if (!TryParseValue0_0(raw.Span, out var parsed))
                             return global::RunesHela.RunesHelaErrors.InvalidValue(commandPath, "count", global::RunesHela.Parsing.SpanText.ToString(raw), "an integer", json);
                         o1 = parsed;
+                        o1Set = true;
 
                         continue;
                     }
                     case 2:
                     {
-                        if (negated) { o2 = false; continue; }
+                        if (negated) { o2 = false; o2Set = true; continue; }
                         if (token.HasValue)
                         {
                             if (!global::System.Boolean.TryParse(token.Value, out var parsed))
@@ -242,6 +286,7 @@ internal static class __RunesHelaEntry
                         {
                             o2 = true;
                         }
+                        o2Set = true;
                         continue;
                     }
                     case -1:
@@ -284,6 +329,71 @@ internal static class __RunesHelaEntry
             }
         }
 
+        if (!o1Set)
+        {
+            var envValue = global::System.Environment.GetEnvironmentVariable("TESTASSEMBLY_DEPLOY_COUNT");
+            if (envValue is not null)
+            {
+                if (!TryParseValue0_1(envValue, out var parsed))
+                    return global::RunesHela.RunesHelaErrors.InvalidValue(commandPath, "count", envValue, "an integer", json);
+                o1 = parsed;
+                o1Set = true;
+            }
+        }
+
+        if (!o2Set)
+        {
+            var envValue = global::System.Environment.GetEnvironmentVariable("TESTASSEMBLY_DEPLOY_DRY_RUN");
+            if (envValue is not null)
+            {
+                if (!global::RunesHela.RunesHelaEnvironment.TryParseBoolean(envValue, out var parsed))
+                    return global::RunesHela.RunesHelaErrors.InvalidValue(commandPath, "dry-run", envValue, "true or false", json);
+                o2 = parsed;
+                o2Set = true;
+            }
+        }
+
+        var config = global::RunesHela.RunesHelaConfiguration.Load(localConfigPath, AppName, json, null, commandPath);
+        if (config.ExitCode != 0)
+        {
+            return config.ExitCode;
+        }
+
+        if (!o0Set)
+        {
+            if (config.TryGetValue("deploy.environment", out var configValue0))
+            {
+                o0 = configValue0;
+                o0Set = true;
+            }
+        }
+
+        if (!o1Set)
+        {
+            if (config.TryGetValue("deploy.count", out var configValue1))
+            {
+                if (!TryParseValue0_2(configValue1, out var configParsed1))
+                {
+                    return global::RunesHela.RunesHelaErrors.ConfigInvalidValue(config.Path ?? "configuration", "deploy.count", "an integer", json, commandPath);
+                }
+                o1 = configParsed1;
+                o1Set = true;
+            }
+        }
+
+        if (!o2Set)
+        {
+            if (config.TryGetValue("deploy.dry-run", out var configValue2))
+            {
+                if (!TryParseValue0_3(configValue2, out var configParsed2))
+                {
+                    return global::RunesHela.RunesHelaErrors.ConfigInvalidValue(config.Path ?? "configuration", "deploy.dry-run", "true or false", json, commandPath);
+                }
+                o2 = configParsed2;
+                o2Set = true;
+            }
+        }
+
         if ((double)o1 < 1 || (double)o1 > 10)
             return global::RunesHela.RunesHelaErrors.ValidationFailed(commandPath, "count", "must be between 1 and 10", json);
 
@@ -301,6 +411,21 @@ internal static class __RunesHelaEntry
     private static bool TryParseValue0_0(ReadOnlySpan<char> text, out int value)
     {
         return global::RunesHela.Parsing.ValueParser.TryParse(text, out value);
+    }
+
+    private static bool TryParseValue0_1(ReadOnlySpan<char> text, out int value)
+    {
+        return global::RunesHela.Parsing.ValueParser.TryParse(text, out value);
+    }
+
+    private static bool TryParseValue0_2(ReadOnlySpan<char> text, out int value)
+    {
+        return global::RunesHela.Parsing.ValueParser.TryParse(text, out value);
+    }
+
+    private static bool TryParseValue0_3(ReadOnlySpan<char> text, out bool value)
+    {
+        return global::System.Boolean.TryParse(text, out value);
     }
 
     private static ValueTask<int> RunCompletion(ReadOnlySpan<string> args, bool json)

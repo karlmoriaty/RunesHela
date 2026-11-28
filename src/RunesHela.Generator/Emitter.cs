@@ -6,7 +6,7 @@ namespace RunesHela.Generator;
 
 internal static class Emitter
 {
-    public static string Emit(string appName, IReadOnlyList<CommandNode> roots)
+    public static string Emit(string appName, IReadOnlyList<CommandNode> roots, string? configFileName)
     {
         var allNodes = new List<CommandNode>();
         var indexes = new Dictionary<CommandNode, int>();
@@ -36,6 +36,7 @@ internal static class Emitter
         AppendConst(builder, "CompletionPowerShell", CompletionScripts.PowerShell(appName, roots));
         AppendConst(builder, "DocsMarkdown", DocsMarkdown.Build(appName, roots));
         AppendConst(builder, "ManRoff", ManRoff.Build(appName, roots));
+        AppendConst(builder, "ConfigSchema", ConfigSchema.Build(appName, roots));
 
         for (var i = 0; i < allNodes.Count; i++)
         {
@@ -68,7 +69,7 @@ internal static class Emitter
         {
             AppendNodeRun(builder, allNodes[i], i, indexes);
             AppendNodeInvoke(builder, allNodes[i], i);
-            BindingEmitter.Emit(builder, allNodes[i], i);
+            BindingEmitter.Emit(builder, allNodes[i], appName, configFileName, i);
         }
 
         AppendArtifactHelpers(builder, allNodes);
@@ -195,6 +196,7 @@ internal static class Emitter
         builder.AppendLine("    {");
         builder.AppendLine("        var json = global::RunesHela.RunesHelaOutputOptions.WantsJson(args);");
         builder.AppendLine("        var commandIndex = -1;");
+        builder.AppendLine("        string? configPath = null;");
         builder.AppendLine();
         builder.AppendLine("        for (var i = 0; i < args.Length; i++)");
         builder.AppendLine("        {");
@@ -230,6 +232,23 @@ internal static class Emitter
         builder.AppendLine("                continue;");
         builder.AppendLine("            }");
         builder.AppendLine();
+        builder.AppendLine("            if (arg == \"--config\")");
+        builder.AppendLine("            {");
+        builder.AppendLine("                if (i + 1 >= args.Length || args[i + 1].Length == 0)");
+        builder.AppendLine("                    return new ValueTask<int>(global::RunesHela.RunesHelaErrors.MissingValue(string.Empty, \"config\", json));");
+        builder.AppendLine("                configPath = args[i + 1];");
+        builder.AppendLine("                i++;");
+        builder.AppendLine("                continue;");
+        builder.AppendLine("            }");
+        builder.AppendLine();
+        builder.AppendLine("            if (arg.StartsWith(\"--config=\", StringComparison.Ordinal))");
+        builder.AppendLine("            {");
+        builder.AppendLine("                if (arg.Length == 9)");
+        builder.AppendLine("                    return new ValueTask<int>(global::RunesHela.RunesHelaErrors.MissingValue(string.Empty, \"config\", json));");
+        builder.AppendLine("                configPath = arg.Substring(9);");
+        builder.AppendLine("                continue;");
+        builder.AppendLine("            }");
+        builder.AppendLine();
         builder.AppendLine("            if (arg.Length > 2 && arg[0] == '-' && arg[1] == '-' && global::RunesHela.RunesHelaOutputOptions.IsGlobalFlag(arg.AsSpan(2))) continue;");
         builder.AppendLine("            if (arg == \"-y\") continue;");
         builder.AppendLine();
@@ -241,6 +260,12 @@ internal static class Emitter
         builder.AppendLine("        {");
         builder.AppendLine("            WriteRootHelp(json);");
         builder.AppendLine("            return new ValueTask<int>(0);");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        if (configPath is null)");
+        builder.AppendLine("        {");
+        builder.AppendLine("            var environmentConfig = global::System.Environment.GetEnvironmentVariable(\"RHL_CONFIG\");");
+        builder.AppendLine("            if (!string.IsNullOrEmpty(environmentConfig)) configPath = environmentConfig;");
         builder.AppendLine("        }");
         builder.AppendLine();
         builder.AppendLine("        var command = args[commandIndex];");
@@ -265,6 +290,12 @@ internal static class Emitter
         builder.AppendLine("        if (command == \"man\")");
         builder.AppendLine("        {");
         builder.AppendLine("            global::RunesHela.RunesHelaConsole.Current.Out.WriteLine(ManRoff);");
+        builder.AppendLine("            return new ValueTask<int>(0);");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        if (command == \"schema\")");
+        builder.AppendLine("        {");
+        builder.AppendLine("            global::RunesHela.RunesHelaConsole.Current.Out.WriteLine(ConfigSchema);");
         builder.AppendLine("            return new ValueTask<int>(0);");
         builder.AppendLine("        }");
         builder.AppendLine();
@@ -311,7 +342,7 @@ internal static class Emitter
         builder.Append("            case ").Append(CodeLiteral.String(name)).AppendLine(":");
         builder.Append("                return RunNode").Append(index)
             .Append("Async(").Append(argsVariable).Append(".Slice(").Append(indexVariable)
-            .Append(" + 1), ").Append(jsonVariable).AppendLine(", services, cancellationToken);");
+            .Append(" + 1), ").Append(jsonVariable).AppendLine(", services, cancellationToken, configPath);");
     }
 
     private static void AppendNodeRun(
@@ -323,7 +354,7 @@ internal static class Emitter
         var model = node.Model;
 
         builder.Append("    private static ValueTask<int> RunNode").Append(index)
-            .AppendLine("Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken)");
+            .AppendLine("Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken, string? configPath)");
         builder.AppendLine("    {");
 
         if (node.Children.Count > 0)
@@ -367,7 +398,7 @@ internal static class Emitter
 
             if (model.HandlerName is not null)
             {
-                builder.Append("            return InvokeNode").Append(index).AppendLine("Async(args, json, services, cancellationToken);");
+                builder.Append("            return InvokeNode").Append(index).AppendLine("Async(args, json, services, cancellationToken, configPath);");
             }
             else
             {
@@ -380,7 +411,7 @@ internal static class Emitter
 
             if (model.HandlerName is not null)
             {
-                builder.Append("        return InvokeNode").Append(index).AppendLine("Async(args, json, services, cancellationToken);");
+                builder.Append("        return InvokeNode").Append(index).AppendLine("Async(args, json, services, cancellationToken, configPath);");
             }
             else
             {
@@ -391,7 +422,7 @@ internal static class Emitter
         }
         else if (model.HandlerName is not null)
         {
-            builder.Append("        return InvokeNode").Append(index).AppendLine("Async(args, json, services, cancellationToken);");
+            builder.Append("        return InvokeNode").Append(index).AppendLine("Async(args, json, services, cancellationToken, configPath);");
         }
         else
         {
@@ -412,7 +443,7 @@ internal static class Emitter
 
         builder.Append("                case ").Append(CodeLiteral.String(name)).AppendLine(":");
         builder.Append("                    return RunNode").Append(index)
-            .AppendLine("Async(args.Slice(1), json, services, cancellationToken);");
+            .AppendLine("Async(args.Slice(1), json, services, cancellationToken, configPath);");
     }
 
     private static void AppendNodeInvoke(StringBuilder builder, CommandNode node, int index)
@@ -425,17 +456,17 @@ internal static class Emitter
         }
 
         builder.Append("    private static ValueTask<int> InvokeNode").Append(index)
-            .AppendLine("Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken)");
+            .AppendLine("Async(ReadOnlySpan<string> args, bool json, global::System.IServiceProvider? services, CancellationToken cancellationToken, string? configPath)");
         builder.AppendLine("    {");
 
         if (model.IsStatic)
         {
-            builder.Append("        var bindResult = BindNode").Append(index).AppendLine("(args, services, cancellationToken, json);");
+            builder.Append("        var bindResult = BindNode").Append(index).AppendLine("(args, services, cancellationToken, json, configPath);");
         }
         else
         {
             builder.Append("        var bindResult = BindNode").Append(index)
-                .AppendLine("(args, services, cancellationToken, json, out var command);");
+                .AppendLine("(args, services, cancellationToken, json, configPath, out var command);");
         }
 
         builder.AppendLine("        if (bindResult != 0)");

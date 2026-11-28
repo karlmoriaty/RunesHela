@@ -25,6 +25,7 @@ internal static class CompletionData
             }
         }
 
+        Add(result, seen, "--config");
         Add(result, seen, "--help");
         Add(result, seen, "--version");
         return result;
@@ -77,6 +78,7 @@ internal static class CompletionData
             Add(result, seen, "--no-input");
         }
 
+        Add(result, seen, "--config");
         Add(result, seen, "--help");
 
         if (isRoot)

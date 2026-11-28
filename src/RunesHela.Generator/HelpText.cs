@@ -43,7 +43,7 @@ internal static class HelpText
 
         lines.Add(string.Empty);
         lines.Add("Options:");
-        AppendRows(lines, BuildOptionRows(model, isRoot));
+        AppendRows(lines, BuildOptionRows(model, isRoot, appName, node));
 
         if (!isRoot && model!.Examples.Count > 0)
         {
@@ -141,7 +141,7 @@ internal static class HelpText
         return rows;
     }
 
-    private static List<Row> BuildOptionRows(CommandModel? model, bool isRoot)
+    private static List<Row> BuildOptionRows(CommandModel? model, bool isRoot, string appName, CommandNode? node)
     {
         var rows = new List<Row>();
 
@@ -180,10 +180,8 @@ internal static class HelpText
                     }
                 }
 
-                if (option.EnvVar is not null)
-                {
-                    right = AppendAnnotation(right, "[env: " + option.EnvVar + "]");
-                }
+                var envVar = ConfigurationConventions.EnvVar(appName, node!.Path, option);
+                right = AppendAnnotation(right, "[env: " + envVar + "]");
 
                 if (option.IsSecret)
                 {
@@ -200,6 +198,7 @@ internal static class HelpText
             }
         }
 
+        rows.Add(new Row("      --config <PATH>", "Read configuration from PATH."));
         rows.Add(new Row("  -h, --help", "Show help."));
 
         if (isRoot)

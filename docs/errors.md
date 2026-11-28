@@ -20,6 +20,9 @@ RunesHela uses two code families:
 <a id="rhl_usage_aborted"></a>
 <a id="rhl_usage_unsupported_format"></a>
 <a id="rhl_usage_unknown_shell"></a>
+<a id="rhl_config_not_found"></a>
+<a id="rhl_config_invalid"></a>
+<a id="rhl_config_invalid_value"></a>
 <a id="rhl_di_services_missing"></a>
 <a id="rhl_di_service_missing"></a>
 <a id="rhl_internal_not_implemented"></a>
@@ -38,12 +41,17 @@ RunesHela uses two code families:
 | `RHL_USAGE_ABORTED` | 2 | Interactive confirmation was declined | Answering `n` at the prompt |
 | `RHL_USAGE_UNSUPPORTED_FORMAT` | 2 | Unknown `--format` value | `--format yaml` |
 | `RHL_USAGE_UNKNOWN_SHELL` | 2 | Unknown completion shell | `completion bas` |
+| `RHL_CONFIG_NOT_FOUND` | 3 | Explicit configuration file does not exist | `--config missing.json` or `RHL_CONFIG` |
+| `RHL_CONFIG_INVALID` | 3 | Configuration file cannot be read or parsed | Malformed JSON, non-object root, non-scalar array |
+| `RHL_CONFIG_INVALID_VALUE` | 3 | Configuration value cannot be converted to the option type | `"count": "abc"` |
 | `RHL_DI_SERVICES_MISSING` | 1 | Command needs constructor dependencies but no provider was supplied | `RunesHelaApp.Run(args)` for a DI command |
 | `RHL_DI_SERVICE_MISSING` | 1 | Constructor dependency could not be resolved | Service not registered |
 | `RHL_INTERNAL_NOT_IMPLEMENTED` | 1 | Command declares no handler | `[Command]` class without `Run` |
 | `RHL_INTERNAL_UNEXPECTED` | 1 | Unhandled exception escaped the command | Handler threw |
 
-Precedence is `CLI > environment variable > property initializer`. Usage errors use exit code `2`; dependency and internal errors use `1`. Unknown names include a did-you-mean hint when a close candidate exists.
+Precedence is `CLI > environment variable > configuration file > property initializer`. Usage errors use exit code `2`; configuration errors use `3`; dependency and internal errors use `1`. Unknown names include a did-you-mean hint when a close candidate exists.
+
+Configuration errors never include the offending value, and sensitive keys are redacted, so a malformed secret cannot leak through stderr or the JSON envelope. Implicit file discovery is enabled with `[assembly: RunesHelaConfigFile]`; without it, only `--config` and `RHL_CONFIG` load a file, which keeps the binding hot path free of file IO and allocations.
 
 ## Exit code matrix
 
@@ -105,6 +113,7 @@ Precedence is `CLI > environment variable > property initializer`. Usage errors 
 | RHL037 | Error | Invalid filter type (not a class, generic, or abstract) |
 | RHL038 | Error | Filter does not implement `RunesHela.IRunesHelaFilter` |
 | RHL039 | Error | Filter has no accessible parameterless constructor |
+| RHL040 | Error | Invalid configuration key (use dot-separated segments of letters, digits, `-`, or `_`) |
 | RHL999 | Warning | Generator failed unexpectedly |
 
 Diagnostics are reported with a source location, a stable code, and actionable text. An error skips code generation for the affected command instead of producing cascading failures.

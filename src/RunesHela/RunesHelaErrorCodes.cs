@@ -38,6 +38,15 @@ public static class RunesHelaErrorCodes
     /// <summary>A requested completion shell is not supported.</summary>
     public const string UnknownShell = "RHL_USAGE_UNKNOWN_SHELL";
 
+    /// <summary>An explicitly requested configuration file does not exist.</summary>
+    public const string ConfigNotFound = "RHL_CONFIG_NOT_FOUND";
+
+    /// <summary>A configuration file could not be read or parsed.</summary>
+    public const string ConfigInvalid = "RHL_CONFIG_INVALID";
+
+    /// <summary>A configuration value cannot be converted to the declared option type.</summary>
+    public const string ConfigInvalidValue = "RHL_CONFIG_INVALID_VALUE";
+
     /// <summary>The command needs services but no service provider was supplied.</summary>
     public const string ServicesMissing = "RHL_DI_SERVICES_MISSING";
 

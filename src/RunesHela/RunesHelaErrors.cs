@@ -14,6 +14,9 @@ public static class RunesHelaErrors
     private const string MissingRequiredDocs = DocsBase + "rhl_usage_missing_required";
     private const string UnexpectedArgumentDocs = DocsBase + "rhl_usage_unexpected_argument";
     private const string ValidationFailedDocs = DocsBase + "rhl_usage_validation_failed";
+    private const string ConfigNotFoundDocs = DocsBase + "rhl_config_not_found";
+    private const string ConfigInvalidDocs = DocsBase + "rhl_config_invalid";
+    private const string ConfigInvalidValueDocs = DocsBase + "rhl_config_invalid_value";
     private const string ServicesMissingDocs = DocsBase + "rhl_di_services_missing";
     private const string ServiceMissingDocs = DocsBase + "rhl_di_service_missing";
     private const string NotImplementedDocs = DocsBase + "rhl_internal_not_implemented";
@@ -282,6 +285,87 @@ public static class RunesHelaErrors
     }
 
     /// <summary>
+    /// Writes an error for a configuration file that was requested but does not exist.
+    /// </summary>
+    /// <param name="path">The configuration file path.</param>
+    /// <param name="json">Whether to write JSON.</param>
+    /// <param name="command">The command path, or <see langword="null"/>.</param>
+    /// <returns>The exit code.</returns>
+    public static int ConfigNotFound(string path, bool json, string? command = null)
+    {
+        return Write(
+            new RunesHelaError
+            {
+                Code = RunesHelaErrorCodes.ConfigNotFound,
+                Message = "Configuration file '" + path + "' was not found.",
+                ExitCode = RunesHelaExitCode.Configuration,
+                CommandPath = command,
+                DocsUrl = DocsUrl(RunesHelaErrorCodes.ConfigNotFound),
+                NextSteps = new[]
+                {
+                    "Pass '--config <PATH>' with an existing file.",
+                    "Unset 'RHL_CONFIG' to use an implicit path.",
+                },
+            },
+            json);
+    }
+
+    /// <summary>
+    /// Writes an error for a configuration file that cannot be read or parsed.
+    /// </summary>
+    /// <param name="path">The configuration file path.</param>
+    /// <param name="detail">A value-free description of the problem.</param>
+    /// <param name="json">Whether to write JSON.</param>
+    /// <param name="command">The command path, or <see langword="null"/>.</param>
+    /// <returns>The exit code.</returns>
+    public static int ConfigInvalid(string path, string detail, bool json, string? command = null)
+    {
+        return Write(
+            new RunesHelaError
+            {
+                Code = RunesHelaErrorCodes.ConfigInvalid,
+                Message = "Configuration file '" + path + "' is invalid.",
+                Hint = detail,
+                ExitCode = RunesHelaExitCode.Configuration,
+                CommandPath = command,
+                DocsUrl = DocsUrl(RunesHelaErrorCodes.ConfigInvalid),
+                NextSteps = new[] { "Fix the file, or pass '--config <PATH>' to use another one." },
+            },
+            json);
+    }
+
+    /// <summary>
+    /// Writes an error for a configuration value that cannot be converted to the option type.
+    /// The value is never included in the message so secrets stay redacted.
+    /// </summary>
+    /// <param name="path">The configuration file path.</param>
+    /// <param name="key">The configuration key.</param>
+    /// <param name="expected">A description of the expected value.</param>
+    /// <param name="json">Whether to write JSON.</param>
+    /// <param name="command">The command path, or <see langword="null"/>.</param>
+    /// <returns>The exit code.</returns>
+    public static int ConfigInvalidValue(
+        string path,
+        string key,
+        string expected,
+        bool json,
+        string? command = null)
+    {
+        return Write(
+            new RunesHelaError
+            {
+                Code = RunesHelaErrorCodes.ConfigInvalidValue,
+                Message = "Configuration value for '" + key + "' in '" + path + "' is invalid.",
+                Hint = "Expected " + expected + ".",
+                ExitCode = RunesHelaExitCode.Configuration,
+                CommandPath = command,
+                DocsUrl = DocsUrl(RunesHelaErrorCodes.ConfigInvalidValue),
+                NextSteps = new[] { "Fix '" + key + "', or pass the option explicitly on the command line." },
+            },
+            json);
+    }
+
+    /// <summary>
     /// Writes an error for a command that needs services but received no service provider.
     /// </summary>
     /// <param name="commandPath">The command path.</param>
@@ -475,6 +559,9 @@ public static class RunesHelaErrors
             RunesHelaErrorCodes.MissingRequired => MissingRequiredDocs,
             RunesHelaErrorCodes.UnexpectedArgument => UnexpectedArgumentDocs,
             RunesHelaErrorCodes.ValidationFailed => ValidationFailedDocs,
+            RunesHelaErrorCodes.ConfigNotFound => ConfigNotFoundDocs,
+            RunesHelaErrorCodes.ConfigInvalid => ConfigInvalidDocs,
+            RunesHelaErrorCodes.ConfigInvalidValue => ConfigInvalidValueDocs,
             RunesHelaErrorCodes.ServicesMissing => ServicesMissingDocs,
             RunesHelaErrorCodes.ServiceMissing => ServiceMissingDocs,
             RunesHelaErrorCodes.NotImplemented => NotImplementedDocs,
