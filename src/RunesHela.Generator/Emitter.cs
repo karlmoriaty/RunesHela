@@ -30,6 +30,12 @@ internal static class Emitter
         AppendConst(builder, "RootHelpText", HelpText.Build(appName, null, roots, isRoot: true));
         AppendConst(builder, "RootHelpJson", HelpJson.Build(appName, null, roots, isRoot: true));
         AppendConst(builder, "DescribeJson", DescribeJson.Build(appName, roots));
+        AppendConst(builder, "CompletionBash", CompletionScripts.Bash(appName, roots));
+        AppendConst(builder, "CompletionZsh", CompletionScripts.Zsh(appName, roots));
+        AppendConst(builder, "CompletionFish", CompletionScripts.Fish(appName, roots));
+        AppendConst(builder, "CompletionPowerShell", CompletionScripts.PowerShell(appName, roots));
+        AppendConst(builder, "DocsMarkdown", DocsMarkdown.Build(appName, roots));
+        AppendConst(builder, "ManRoff", ManRoff.Build(appName, roots));
 
         for (var i = 0; i < allNodes.Count; i++)
         {
@@ -39,9 +45,12 @@ internal static class Emitter
 
         builder.AppendLine();
         AppendCandidates(builder, "CommandCandidates", GetCommandNames(roots));
+        AppendCandidates(builder, "CompletionRoot", CompletionData.RootCandidates(roots), allowEmpty: true);
 
         for (var i = 0; i < allNodes.Count; i++)
         {
+            AppendCandidates(builder, "Completion" + i, CompletionData.Candidates(allNodes[i], isRoot: false), allowEmpty: true);
+
             if (allNodes[i].Model.Options.Count > 0)
             {
                 AppendCandidates(builder, "OptionCandidates" + i, GetOptionNames(allNodes[i].Model));
@@ -62,6 +71,7 @@ internal static class Emitter
             BindingEmitter.Emit(builder, allNodes[i], i);
         }
 
+        AppendArtifactHelpers(builder, allNodes);
         AppendWriteHelpers(builder, allNodes);
         AppendAwaitHelpers(builder);
 
@@ -97,10 +107,17 @@ internal static class Emitter
         builder.Append("    private const string ").Append(name).Append(" = ").Append(CodeLiteral.String(value)).AppendLine(";");
     }
 
-    private static void AppendCandidates(StringBuilder builder, string name, List<string> values)
+    private static void AppendCandidates(StringBuilder builder, string name, List<string> values, bool allowEmpty = false)
     {
+        if (values.Count == 0 && !allowEmpty)
+        {
+            return;
+        }
+
         if (values.Count == 0)
         {
+            builder.Append("    private static readonly string[] ").Append(name).AppendLine(" = Array.Empty<string>();");
+            builder.AppendLine();
             return;
         }
 
@@ -232,6 +249,28 @@ internal static class Emitter
         builder.AppendLine("        {");
         builder.AppendLine("            global::RunesHela.RunesHelaConsole.Current.Out.WriteLine(DescribeJson);");
         builder.AppendLine("            return new ValueTask<int>(0);");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        if (command == \"completion\")");
+        builder.AppendLine("        {");
+        builder.AppendLine("            return RunCompletion(args.Slice(commandIndex + 1), json);");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        if (command == \"docs\")");
+        builder.AppendLine("        {");
+        builder.AppendLine("            global::RunesHela.RunesHelaConsole.Current.Out.WriteLine(DocsMarkdown);");
+        builder.AppendLine("            return new ValueTask<int>(0);");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        if (command == \"man\")");
+        builder.AppendLine("        {");
+        builder.AppendLine("            global::RunesHela.RunesHelaConsole.Current.Out.WriteLine(ManRoff);");
+        builder.AppendLine("            return new ValueTask<int>(0);");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        if (command == \"__complete\")");
+        builder.AppendLine("        {");
+        builder.AppendLine("            return new ValueTask<int>(Complete(args.Slice(commandIndex + 1)));");
         builder.AppendLine("        }");
         builder.AppendLine();
         builder.AppendLine("        switch (command)");
@@ -491,6 +530,79 @@ internal static class Emitter
                 builder.Append(indent).AppendLine("return new ValueTask<int>(global::RunesHela.RunesHelaExitCode.Failure);");
                 break;
         }
+    }
+
+    private static void AppendArtifactHelpers(StringBuilder builder, IReadOnlyList<CommandNode> nodes)
+    {
+        builder.AppendLine("    private static ValueTask<int> RunCompletion(ReadOnlySpan<string> args, bool json)");
+        builder.AppendLine("    {");
+        builder.AppendLine("        var shell = args.Length > 0 ? args[0] : string.Empty;");
+        builder.AppendLine("        var output = global::RunesHela.RunesHelaConsole.Current.Out;");
+        builder.AppendLine();
+        builder.AppendLine("        if (shell.Equals(\"bash\", StringComparison.OrdinalIgnoreCase))");
+        builder.AppendLine("        {");
+        builder.AppendLine("            output.WriteLine(CompletionBash);");
+        builder.AppendLine("            return new ValueTask<int>(0);");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        if (shell.Equals(\"zsh\", StringComparison.OrdinalIgnoreCase))");
+        builder.AppendLine("        {");
+        builder.AppendLine("            output.WriteLine(CompletionZsh);");
+        builder.AppendLine("            return new ValueTask<int>(0);");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        if (shell.Equals(\"fish\", StringComparison.OrdinalIgnoreCase))");
+        builder.AppendLine("        {");
+        builder.AppendLine("            output.WriteLine(CompletionFish);");
+        builder.AppendLine("            return new ValueTask<int>(0);");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        if (shell.Equals(\"pwsh\", StringComparison.OrdinalIgnoreCase) || shell.Equals(\"powershell\", StringComparison.OrdinalIgnoreCase))");
+        builder.AppendLine("        {");
+        builder.AppendLine("            output.WriteLine(CompletionPowerShell);");
+        builder.AppendLine("            return new ValueTask<int>(0);");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        return new ValueTask<int>(global::RunesHela.RunesHelaErrors.UnknownShell(shell, json));");
+        builder.AppendLine("    }");
+        builder.AppendLine();
+        builder.AppendLine("    private static int Complete(ReadOnlySpan<string> args)");
+        builder.AppendLine("    {");
+        builder.AppendLine("        var prefix = args.Length > 0 ? args[args.Length - 1] : string.Empty;");
+        builder.AppendLine("        var path = args.Length > 1 ? string.Join(\" \", args.Slice(0, args.Length - 1).ToArray()) : string.Empty;");
+        builder.AppendLine("        string[] candidates;");
+        builder.AppendLine();
+        builder.AppendLine("        switch (path)");
+        builder.AppendLine("        {");
+        builder.AppendLine("            default:");
+        builder.AppendLine("                candidates = Array.Empty<string>();");
+        builder.AppendLine("                break;");
+        builder.AppendLine("            case \"\":");
+        builder.AppendLine("                candidates = CompletionRoot;");
+        builder.AppendLine("                break;");
+
+        for (var i = 0; i < nodes.Count; i++)
+        {
+            builder.Append("            case ").Append(CodeLiteral.String(nodes[i].Path)).AppendLine(":");
+            builder.Append("                candidates = Completion").Append(i).AppendLine(";");
+            builder.AppendLine("                break;");
+        }
+
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        var output = global::RunesHela.RunesHelaConsole.Current.Out;");
+        builder.AppendLine();
+        builder.AppendLine("        foreach (var candidate in candidates)");
+        builder.AppendLine("        {");
+        builder.AppendLine("            if (candidate.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))");
+        builder.AppendLine("            {");
+        builder.AppendLine("                output.WriteLine(candidate);");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        return 0;");
+        builder.AppendLine("    }");
+        builder.AppendLine();
     }
 
     private static void AppendWriteHelpers(StringBuilder builder, IReadOnlyList<CommandNode> nodes)

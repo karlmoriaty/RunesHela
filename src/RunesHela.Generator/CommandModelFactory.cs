@@ -10,7 +10,16 @@ internal static class CommandModelFactory
 {
     private const string CommandAttributeName = "RunesHela.CommandAttribute";
     private static readonly string[] HandlerNames = { "RunAsync", "Run", "ExecuteAsync", "Execute" };
-    private static readonly string[] ReservedNames = { "help", "version" };
+    private static readonly string[] ReservedNames =
+    {
+        "help",
+        "version",
+        "describe",
+        "completion",
+        "docs",
+        "man",
+        "__complete",
+    };
 
     public static CommandCandidate Create(GeneratorAttributeSyntaxContext context, CancellationToken cancellationToken)
     {

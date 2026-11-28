@@ -539,6 +539,106 @@ public sealed class CliBehaviorTests
         Assert.Equal(141, exitCode);
     }
 
+    [Fact]
+    public async Task CompletionScriptsCoverCommandsAndOptions()
+    {
+        var bash = await Cli.RunAsync(new[] { "completion", "bash" });
+        Assert.Equal(0, bash.ExitCode);
+        Assert.Contains("complete -F _RunesHela_RunesHela_Integration_Tests", bash.NormalizedOut);
+        Assert.Contains("greet", bash.Out);
+        Assert.Contains("--count", bash.Out);
+        Assert.Contains("parent child leaf", bash.Out);
+
+        var zsh = await Cli.RunAsync(new[] { "completion", "zsh" });
+        Assert.Contains("#compdef RunesHela.Integration.Tests", zsh.NormalizedOut);
+
+        var fish = await Cli.RunAsync(new[] { "completion", "fish" });
+        Assert.Contains("complete -c RunesHela.Integration.Tests", fish.NormalizedOut);
+        Assert.Contains("-l count", fish.Out);
+
+        var pwsh = await Cli.RunAsync(new[] { "completion", "pwsh" });
+        Assert.Contains("Register-ArgumentCompleter -Native", pwsh.NormalizedOut);
+    }
+
+    [Fact]
+    public async Task UnknownCompletionShellFailsWithSuggestion()
+    {
+        var result = await Cli.RunAsync(new[] { "completion", "bas" });
+
+        Assert.Equal(2, result.ExitCode);
+        Assert.Contains("Unknown completion shell 'bas'.", result.NormalizedError);
+        Assert.Contains("Did you mean 'bash'?", result.NormalizedError);
+    }
+
+    [Fact]
+    public async Task DocsAndManAreGeneratedFromTheModel()
+    {
+        var docs = await Cli.RunAsync(new[] { "docs" });
+
+        Assert.Equal(0, docs.ExitCode);
+        Assert.Contains("## greet", docs.NormalizedOut);
+        Assert.Contains("--count", docs.Out);
+        Assert.Contains("RHL_GREET_COUNT", docs.Out);
+        Assert.Contains("## parent child leaf", docs.NormalizedOut);
+
+        var man = await Cli.RunAsync(new[] { "man" });
+
+        Assert.Equal(0, man.ExitCode);
+        Assert.Contains(".TH \"RUNESHELA.INTEGRATION.TESTS\"", man.NormalizedOut);
+        Assert.Contains(".B greet", man.NormalizedOut);
+    }
+
+    [Fact]
+    public async Task CompletionDocsAndDescribeStayConsistent()
+    {
+        var describe = await Cli.RunAsync(new[] { "describe" });
+        var bash = await Cli.RunAsync(new[] { "completion", "bash" });
+        var docs = await Cli.RunAsync(new[] { "docs" });
+
+        using var document = JsonDocument.Parse(describe.Out);
+        var greet = FindCommand(document.RootElement.GetProperty("commands"), "greet");
+
+        foreach (var option in greet.GetProperty("options").EnumerateArray())
+        {
+            var name = option.GetProperty("name").GetString();
+
+            if (name is "help" or "yes" or "no-input")
+            {
+                continue;
+            }
+
+            Assert.Contains("--" + name, bash.Out);
+            Assert.Contains("--" + name, docs.Out);
+        }
+
+        foreach (var command in document.RootElement.GetProperty("commands").EnumerateArray())
+        {
+            var name = command.GetProperty("name").GetString()!;
+            Assert.Contains(name, bash.Out);
+            Assert.Contains("## " + name, docs.NormalizedOut);
+        }
+    }
+
+    [Fact]
+    public async Task DynamicCompletionReturnsCommandsOptionsAndSubcommands()
+    {
+        var root = await Cli.RunAsync(new[] { "__complete", "" });
+        Assert.Contains("greet", root.Out);
+        Assert.Contains("--version", root.Out);
+
+        var prefix = await Cli.RunAsync(new[] { "__complete", "gre" });
+        Assert.Contains("greet", prefix.Out);
+        Assert.DoesNotContain("deploy", prefix.Out);
+
+        var subcommands = await Cli.RunAsync(new[] { "__complete", "parent", "" });
+        Assert.Contains("child", subcommands.Out);
+        Assert.Contains("--help", subcommands.Out);
+
+        var options = await Cli.RunAsync(new[] { "__complete", "greet", "--c" });
+        Assert.Contains("--count", options.Out);
+        Assert.DoesNotContain("--name", options.Out);
+    }
+
     private static JsonElement FindCommand(JsonElement commands, string name)
     {
         foreach (var command in commands.EnumerateArray())

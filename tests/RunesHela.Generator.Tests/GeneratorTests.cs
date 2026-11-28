@@ -783,6 +783,28 @@ public sealed class GeneratorTests
         Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL039");
     }
 
+    [Fact]
+    public void ReportsReservedBuiltInCommandName()
+    {
+        const string source = """
+            using RunesHela;
+
+            namespace Demo;
+
+            [Command("docs", Description = "Conflicts with a built-in.")]
+            public sealed class DocsCommand
+            {
+                public void Run()
+                {
+                }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Id == "RHL025");
+    }
+
     internal static GeneratorResult RunGenerator(string source)
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);

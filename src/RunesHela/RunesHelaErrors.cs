@@ -20,6 +20,7 @@ public static class RunesHelaErrors
     private const string ConfirmationRequiredDocs = DocsBase + "rhl_usage_confirmation_required";
     private const string AbortedDocs = DocsBase + "rhl_usage_aborted";
     private const string UnsupportedFormatDocs = DocsBase + "rhl_usage_unsupported_format";
+    private const string UnknownShellDocs = DocsBase + "rhl_usage_unknown_shell";
     private const string UnexpectedErrorDocs = DocsBase + "rhl_internal_unexpected";
 
     /// <summary>
@@ -410,6 +411,31 @@ public static class RunesHelaErrors
     }
 
     /// <summary>
+    /// Writes an unknown completion shell error.
+    /// </summary>
+    /// <param name="shell">The supplied shell name.</param>
+    /// <param name="json">Whether to write JSON.</param>
+    /// <returns>The exit code.</returns>
+    public static int UnknownShell(string shell, bool json)
+    {
+        var suggestion = DidYouMean.Nearest(shell, new[] { "bash", "zsh", "fish", "pwsh" });
+
+        return Write(
+            new RunesHelaError
+            {
+                Code = RunesHelaErrorCodes.UnknownShell,
+                Message = "Unknown completion shell '" + shell + "'.",
+                Hint = suggestion is null
+                    ? "Use 'bash', 'zsh', 'fish', or 'pwsh'."
+                    : "Did you mean '" + suggestion + "'?",
+                ExitCode = RunesHelaExitCode.Usage,
+                DocsUrl = DocsUrl(RunesHelaErrorCodes.UnknownShell),
+                NextSteps = new[] { "Run 'completion <bash|zsh|fish|pwsh>'." },
+            },
+            json);
+    }
+
+    /// <summary>
     /// Writes an error for an unhandled exception.
     /// </summary>
     /// <param name="exception">The unhandled exception.</param>
@@ -455,6 +481,7 @@ public static class RunesHelaErrors
             RunesHelaErrorCodes.ConfirmationRequired => ConfirmationRequiredDocs,
             RunesHelaErrorCodes.Aborted => AbortedDocs,
             RunesHelaErrorCodes.UnsupportedFormat => UnsupportedFormatDocs,
+            RunesHelaErrorCodes.UnknownShell => UnknownShellDocs,
             RunesHelaErrorCodes.UnexpectedError => UnexpectedErrorDocs,
             _ => DocsBase,
         };

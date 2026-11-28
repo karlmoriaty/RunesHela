@@ -35,6 +35,9 @@ public static class RunesHelaErrorCodes
     /// <summary>An output format value is not supported.</summary>
     public const string UnsupportedFormat = "RHL_USAGE_UNSUPPORTED_FORMAT";
 
+    /// <summary>A requested completion shell is not supported.</summary>
+    public const string UnknownShell = "RHL_USAGE_UNKNOWN_SHELL";
+
     /// <summary>The command needs services but no service provider was supplied.</summary>
     public const string ServicesMissing = "RHL_DI_SERVICES_MISSING";
 

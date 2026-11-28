@@ -19,6 +19,7 @@ RunesHela uses two code families:
 <a id="rhl_usage_confirmation_required"></a>
 <a id="rhl_usage_aborted"></a>
 <a id="rhl_usage_unsupported_format"></a>
+<a id="rhl_usage_unknown_shell"></a>
 <a id="rhl_di_services_missing"></a>
 <a id="rhl_di_service_missing"></a>
 <a id="rhl_internal_not_implemented"></a>
@@ -36,6 +37,7 @@ RunesHela uses two code families:
 | `RHL_USAGE_CONFIRMATION_REQUIRED` | 2 | Destructive command was not confirmed | Non-interactive run without `--yes` |
 | `RHL_USAGE_ABORTED` | 2 | Interactive confirmation was declined | Answering `n` at the prompt |
 | `RHL_USAGE_UNSUPPORTED_FORMAT` | 2 | Unknown `--format` value | `--format yaml` |
+| `RHL_USAGE_UNKNOWN_SHELL` | 2 | Unknown completion shell | `completion bas` |
 | `RHL_DI_SERVICES_MISSING` | 1 | Command needs constructor dependencies but no provider was supplied | `RunesHelaApp.Run(args)` for a DI command |
 | `RHL_DI_SERVICE_MISSING` | 1 | Constructor dependency could not be resolved | Service not registered |
 | `RHL_INTERNAL_NOT_IMPLEMENTED` | 1 | Command declares no handler | `[Command]` class without `Run` |
