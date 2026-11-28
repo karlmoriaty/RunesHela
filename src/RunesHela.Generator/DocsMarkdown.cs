@@ -19,7 +19,7 @@ internal static class DocsMarkdown
             AppendNode(builder, appName, root, depth: 1);
         }
 
-        return builder.ToString();
+        return builder.ToString().Replace("\r\n", "\n");
     }
 
     private static void AppendNode(StringBuilder builder, string appName, CommandNode node, int depth)

@@ -23,7 +23,7 @@ internal static class ManRoff
             AppendNode(builder, root);
         }
 
-        return builder.ToString();
+        return builder.ToString().Replace("\r\n", "\n");
     }
 
     private static void AppendNode(StringBuilder builder, CommandNode node)

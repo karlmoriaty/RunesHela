@@ -40,7 +40,7 @@ internal static class CompletionScripts
         builder.AppendLine("    COMPREPLY=( $(compgen -W \"$candidates\" -- \"$cur\") )");
         builder.AppendLine("}");
         builder.Append("complete -F ").Append(function).Append(' ').AppendLine(appName);
-        return builder.ToString();
+        return builder.ToString().Replace("\r\n", "\n");
     }
 
     public static string Zsh(string appName, IReadOnlyList<CommandNode> roots)
@@ -73,7 +73,7 @@ internal static class CompletionScripts
         builder.AppendLine("    _describe 'values' candidates");
         builder.AppendLine("}");
         builder.Append("compdef ").Append(function).Append(' ').AppendLine(appName);
-        return builder.ToString();
+        return builder.ToString().Replace("\r\n", "\n");
     }
 
     public static string Fish(string appName, IReadOnlyList<CommandNode> roots)
@@ -139,7 +139,7 @@ internal static class CompletionScripts
             }
         }
 
-        return builder.ToString();
+        return builder.ToString().Replace("\r\n", "\n");
     }
 
     public static string PowerShell(string appName, IReadOnlyList<CommandNode> roots)
@@ -175,7 +175,7 @@ internal static class CompletionScripts
         builder.AppendLine("        [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)");
         builder.AppendLine("    }");
         builder.AppendLine("}");
-        return builder.ToString();
+        return builder.ToString().Replace("\r\n", "\n");
     }
 
     private static string ToPowerShellArray(List<string> values)
@@ -192,7 +192,7 @@ internal static class CompletionScripts
             builder.Append('\'').Append(PSQuote(values[i])).Append('\'');
         }
 
-        return builder.ToString();
+        return builder.ToString().Replace("\r\n", "\n");
     }
 
     private static string FunctionName(string appName)
@@ -204,7 +204,7 @@ internal static class CompletionScripts
             builder.Append(char.IsLetterOrDigit(c) ? c : '_');
         }
 
-        return builder.ToString();
+        return builder.ToString().Replace("\r\n", "\n");
     }
 
     private static string LastSegment(string path)
