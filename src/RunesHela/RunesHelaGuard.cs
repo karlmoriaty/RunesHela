@@ -22,20 +22,20 @@ public static class RunesHelaGuard
 
         var console = RunesHelaConsole.Current;
 
-        if (noInput || console.IsInputRedirected)
+        if (noInput || console is not IInteractiveConsole interactive || interactive.IsInputRedirected)
         {
             return RunesHelaErrors.ConfirmationRequired(commandPath, json);
         }
 
-        console.Error.Write("Command '");
-        console.Error.Write(commandPath);
-        console.Error.Write("' is destructive. Continue? [y/N] ");
+        interactive.Error.Write("Command '");
+        interactive.Error.Write(commandPath);
+        interactive.Error.Write("' is destructive. Continue? [y/N] ");
 
         string? answer;
 
         try
         {
-            answer = console.In.ReadLine();
+            answer = interactive.In.ReadLine();
         }
         catch (IOException)
         {

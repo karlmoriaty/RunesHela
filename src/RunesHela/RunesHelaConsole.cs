@@ -24,16 +24,22 @@ public interface IConsole
     /// Gets a value indicating whether ANSI escape sequences may be written to the error stream.
     /// </summary>
     bool IsAnsiSupported => false;
+}
 
+/// <summary>
+/// Adds interactive input capabilities for confirmation prompts.
+/// </summary>
+public interface IInteractiveConsole : IConsole
+{
     /// <summary>
     /// Gets a value indicating whether standard input is redirected.
     /// </summary>
-    bool IsInputRedirected => true;
+    bool IsInputRedirected { get; }
 
     /// <summary>
     /// Gets the reader used for interactive prompts.
     /// </summary>
-    TextReader In => TextReader.Null;
+    TextReader In { get; }
 }
 
 /// <summary>
@@ -52,7 +58,7 @@ public static class RunesHelaConsole
         set => s_current = value ?? throw new ArgumentNullException(nameof(value));
     }
 
-    private sealed class SystemConsole : IConsole
+    private sealed class SystemConsole : IConsole, IInteractiveConsole
     {
         public static readonly SystemConsole Instance = new();
 

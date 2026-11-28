@@ -2,7 +2,7 @@ using RunesHela;
 
 namespace RunesHela.Integration.Tests;
 
-internal sealed class TestConsole : IConsole
+internal sealed class TestConsole : IInteractiveConsole
 {
     private readonly TextWriter _out;
     private readonly TextWriter _error;
